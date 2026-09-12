@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kho Lưu Trữ — Đăng nhập</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div class="brand">
+        <span class="brand-mark">◆</span>
+        <span class="brand-name">Kho Lưu Trữ</span>
+      </div>
+      <p class="auth-tagline">Nơi lưu file của riêng bạn — tải lên, tìm lại bất cứ lúc nào.</p>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="login">Đăng nhập</button>
+        <button class="tab" data-tab="signup">Tạo tài khoản</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="ban@vidu.com" required autocomplete="email">
+        <label for="login-password">Mật khẩu</label>
+        <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+        <button type="submit" class="btn-primary">Đăng nhập</button>
+        <p class="form-message" id="login-message"></p>
+      </form>
+
+      <form id="signup-form" class="auth-form hidden">
+        <label for="signup-email">Email</label>
+        <input type="email" id="signup-email" placeholder="ban@vidu.com" required autocomplete="email">
+        <label for="signup-password">Mật khẩu</label>
+        <input type="password" id="signup-password" placeholder="Tối thiểu 6 ký tự" required autocomplete="new-password" minlength="6">
+        <button type="submit" class="btn-primary">Tạo tài khoản</button>
+        <p class="form-message" id="signup-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
