@@ -3,293 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập & Đăng ký</title>
-    <!-- FontAwesome hỗ trợ icon Google & Facebook -->
+    <title>Hệ thống Đăng nhập Thật</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .auth-container {
-            background-color: #ffffff;
-            width: 100%;
-            max-width: 420px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-
-        /* Thanh chuyển đổi giữa Đăng nhập và Đăng ký */
-        .tab-header {
-            display: flex;
-            background-color: #f1f5f9;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            border: none;
-            background: none;
-            font-weight: 600;
-            font-size: 16px;
-            color: #64748b;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .tab-btn.active {
-            background-color: #ffffff;
-            color: #4f46e5;
-            border-bottom: 3px solid #4f46e5;
-        }
-
-        .form-content {
-            padding: 30px 25px;
-        }
-
-        .form-box {
-            display: none;
-        }
-
-        .form-box.active {
-            display: block;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            color: #1e293b;
-            text-align: center;
-        }
-
-        .input-group {
-            margin-bottom: 16px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 14px;
-            color: #475569;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .input-group input:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 12px;
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 10px;
-        }
-
-        .btn-submit:hover {
-            background-color: #4338ca;
-        }
-
-        /* Phân cách giữa 2 hình thức */
-        .divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            margin: 20px 0;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .divider span {
-            padding: 0 10px;
-        }
-
-        /* Đăng nhập Mạng xã hội */
-        .social-login {
-            display: flex;
-            gap: 12px;
-        }
-
-        .social-btn {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            background: white;
-            font-size: 14px;
-            font-weight: 500;
-            color: #334155;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .social-btn:hover {
-            background-color: #f8fafc;
-        }
-
-        .social-btn.google i { color: #ea4335; }
-        .social-btn.facebook i { color: #1877f2; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background: #1a1a2e; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .auth-container { background: #16213e; width: 100%; max-width: 400px; border-radius: 12px; padding: 30px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); color: #fff; }
+        h2 { text-align: center; margin-bottom: 20px; color: #e94560; }
+        .tab-header { display: flex; margin-bottom: 20px; border-bottom: 1px solid #0f3460; }
+        .tab-btn { flex: 1; padding: 10px; background: none; border: none; color: #8d99ae; font-weight: bold; cursor: pointer; }
+        .tab-btn.active { color: #e94560; border-bottom: 2px solid #e94560; }
+        .form-box { display: none; }
+        .form-box.active { display: block; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-size: 14px; color: #a2a8d3; }
+        .input-group input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #0f3460; background: #0f3460; color: #fff; outline: none; }
+        .btn-submit { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-submit:hover { background: #d63447; }
+        .divider { text-align: center; margin: 15px 0; color: #8d99ae; font-size: 12px; }
+        .social-btn { width: 100%; padding: 10px; background: #fff; color: #333; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .user-info { display: none; text-align: center; }
+        .user-info img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="auth-container">
-    <!-- Nút chuyển đổi Đăng nhập / Đăng ký -->
-    <div class="tab-header">
-        <button class="tab-btn active" onclick="switchTab('login')">Đăng nhập</button>
-        <button class="tab-btn" onclick="switchTab('register')">Đăng ký</button>
-    </div>
+    <!-- KHU VỰC KHI CHƯA ĐĂNG NHẬP -->
+    <div id="auth-section">
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTab('login')">Đăng nhập</button>
+            <button class="tab-btn" onclick="switchTab('register')">Đăng ký</button>
+        </div>
 
-    <div class="form-content">
-        <!-- FORM 1: ĐĂNG NHẬP -->
+        <!-- FORM ĐĂNG NHẬP THẬT -->
         <div id="login-form" class="form-box active">
-            <h2>Chào mừng quay lại!</h2>
-
-            <!-- Hệ thống 1: Đăng nhập bằng Email/Mật khẩu -->
-            <form onsubmit="handleLogin(event)">
+            <h2>Đăng Nhập</h2>
+            <form id="loginForm">
                 <div class="input-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" placeholder="email@vi-du.com" required>
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" required>
                 </div>
                 <div class="input-group">
-                    <label for="login-password">Mật khẩu</label>
-                    <input type="password" id="login-password" placeholder="••••••••" required>
+                    <label>Mật khẩu</label>
+                    <input type="password" id="loginPassword" required>
                 </div>
                 <button type="submit" class="btn-submit">Đăng nhập</button>
             </form>
-
-            <div class="divider">
-                <span>HOẶC ĐĂNG NHẬP VỚI</span>
-            </div>
-
-            <!-- Hệ thống 2: Đăng nhập bằng OAuth (Google/Facebook) -->
-            <div class="social-login">
-                <button class="social-btn google" onclick="socialLogin('Google')">
-                    <i class="fa-brands fa-google"></i> Google
-                </button>
-                <button class="social-btn facebook" onclick="socialLogin('Facebook')">
-                    <i class="fa-brands fa-facebook"></i> Facebook
-                </button>
-            </div>
+            <div class="divider">HOẶC</div>
+            <button class="social-btn" onclick="loginWithGoogle()">
+                <i class="fa-brands fa-google" style="color: #ea4335;"></i> Đăng nhập bằng Google
+            </button>
         </div>
 
-        <!-- FORM 2: ĐĂNG KÝ TÀI KHOẢN MỚI -->
+        <!-- FORM ĐĂNG KÝ THẬT -->
         <div id="register-form" class="form-box">
-            <h2>Tạo tài khoản mới</h2>
-            <form onsubmit="handleRegister(event)">
+            <h2>Đăng Ký Tài Khoản</h2>
+            <form id="registerForm">
                 <div class="input-group">
-                    <label for="reg-name">Họ và tên</label>
-                    <input type="text" id="reg-name" placeholder="Nguyễn Văn A" required>
+                    <label>Email</label>
+                    <input type="email" id="regEmail" required>
                 </div>
                 <div class="input-group">
-                    <label for="reg-email">Email</label>
-                    <input type="email" id="reg-email" placeholder="email@vi-du.com" required>
-                </div>
-                <div class="input-group">
-                    <label for="reg-password">Mật khẩu</label>
-                    <input type="password" id="reg-password" placeholder="••••••••" required>
+                    <label>Mật khẩu (Tối thiểu 6 ký tự)</label>
+                    <input type="password" id="regPassword" required minlength="6">
                 </div>
                 <button type="submit" class="btn-submit">Tạo tài khoản</button>
             </form>
-
-            <div class="divider">
-                <span>HOẶC ĐĂNG KÝ VỚI</span>
-            </div>
-
-            <div class="social-login">
-                <button class="social-btn google" onclick="socialLogin('Google')">
-                    <i class="fa-brands fa-google"></i> Google
-                </button>
-                <button class="social-btn facebook" onclick="socialLogin('Facebook')">
-                    <i class="fa-brands fa-facebook"></i> Facebook
-                </button>
-            </div>
         </div>
+    </div>
+
+    <!-- KHU VỰC HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP THÀNH CÔNG -->
+    <div id="user-section" class="user-info">
+        <h2>Xin chào!</h2>
+        <img id="userAvatar" src="" alt="Avatar" style="display:none;">
+        <p id="userEmail" style="margin-bottom: 20px;"></p>
+        <button class="btn-submit" onclick="logout()">Đăng xuất</button>
     </div>
 </div>
 
-<script>
-    // Chuyển đổi giữa 2 tab Đăng nhập và Đăng ký
-    function switchTab(tab) {
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const tabs = document.querySelectorAll('.tab-btn');
+<!-- NHÚNG FIREBASE SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+        getAuth, 
+        createUserWithEmailAndPassword, 
+        signInWithEmailAndPassword, 
+        signInWithPopup, 
+        GoogleAuthProvider, 
+        onAuthStateChanged, 
+        signOut 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        if (tab === 'login') {
-            loginForm.classList.add('active');
-            registerForm.classList.remove('active');
-            tabs[0].classList.add('active');
-            tabs[1].classList.remove('active');
+    // -------------------------------------------------------------------
+    // BƯỚC BẮT BUỘC: Thay thế cấu hình bên dưới bằng API Key thật của bạn từ Firebase Console
+    // -------------------------------------------------------------------
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    // Khởi tạo Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // 1. Kiểm tra trạng thái đăng nhập tự động
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('user-section').style.display = 'block';
+            document.getElementById('userEmail').innerText = user.email;
+            if (user.photoURL) {
+                const img = document.getElementById('userAvatar');
+                img.src = user.photoURL;
+                img.style.display = 'inline-block';
+            }
         } else {
-            registerForm.classList.add('active');
-            loginForm.classList.remove('active');
-            tabs[1].classList.add('active');
-            tabs[0].classList.remove('active');
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('user-section').style.display = 'none';
         }
-    }
+    });
 
-    // Xử lý sự kiện đăng nhập tài khoản
-    function handleLogin(e) {
+    // 2. Xử lý Đăng ký bằng Email/Mật khẩu thật
+    document.getElementById('registerForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        alert(`Đang xử lý đăng nhập cho: ${email}`);
-        // Thêm code gửi dữ liệu lên Backend tại đây
-    }
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
 
-    // Xử lý sự kiện đăng ký
-    function handleRegister(e) {
+        createUserWithEmailAndPassword(auth, email, password)
+            .then(() => alert("Đăng ký thành công!"))
+            .catch((error) => alert("Lỗi đăng ký: " + error.message));
+    });
+
+    // 3. Xử lý Đăng nhập bằng Email/Mật khẩu thật
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = document.getElementById('reg-name').value;
-        alert(`Đã đăng ký thành công cho: ${name}`);
-        // Thêm code gửi dữ liệu lên Backend tại đây
-    }
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
 
-    // Xử lý đăng nhập bằng Mạng xã hội
-    function socialLogin(provider) {
-        alert(`Đang chuyển hướng đăng nhập bằng ${provider}...`);
-        // Thêm tích hợp OAuth SDK của Google/Facebook tại đây
-    }
+        signInWithEmailAndPassword(auth, email, password)
+            .then(() => alert("Đăng nhập thành công!"))
+            .catch((error) => alert("Lỗi đăng nhập: " + error.message));
+    });
+
+    // 4. Xử lý Đăng nhập bằng Google thật
+    window.loginWithGoogle = () => {
+        signInWithPopup(auth, provider)
+            .then(() => alert("Đăng nhập Google thành công!"))
+            .catch((error) => alert("Lỗi Google Auth: " + error.message));
+    };
+
+    // 5. Xử lý Đăng xuất
+    window.logout = () => {
+        signOut(auth).then(() => alert("Đã đăng xuất!"));
+    };
+
+    // Chuyển tab Giao diện
+    window.switchTab = (tab) => {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.form-box').forEach(box => box.classList.remove('active'));
+        
+        if (tab === 'login') {
+            document.getElementById('login-form').classList.add('active');
+            event.target.classList.add('active');
+        } else {
+            document.getElementById('register-form').classList.add('active');
+            event.target.classList.add('active');
+        }
+    };
 </script>
 
 </body>
 </html>
-
