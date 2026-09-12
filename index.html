@@ -1,337 +1,374 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Web Đăng Nhập Thật</title>
-    <!-- FontAwesome & Google Font -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>byyxd - Storage & File Management</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: #f3f4f6; color: #1f2937; height: 100vh; overflow: hidden; }
-
-        /* Khung Đăng nhập / Đăng ký */
-        #auth-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            display: flex; justify-content: center; align-items: center; z-index: 999;
-            padding: 20px; overflow-y: auto;
+        body {
+            background-color: #f8f9fa;
         }
-
-        .auth-card {
-            background: #ffffff; width: 100%; max-width: 420px; padding: 32px;
-            border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        .after-card a {
+            text-decoration: none;
         }
-
-        .auth-header { text-align: center; margin-bottom: 24px; }
-        .auth-header h2 { font-size: 24px; font-weight: 700; color: #111827; }
-        .auth-header p { font-size: 14px; color: #6b7280; margin-top: 4px; }
-
-        .tab-buttons { display: flex; background: #f3f4f6; padding: 4px; border-radius: 8px; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 8px; border: none; background: transparent; font-weight: 600; color: #4b5563; cursor: pointer; border-radius: 6px; }
-        .tab-btn.active { background: #ffffff; color: #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #374151; }
-        .form-group input { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; }
-        .form-group input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
-
-        .btn-primary { width: 100%; padding: 10px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .btn-primary:hover { background: #4338ca; }
-
-        .divider { display: flex; align-items: center; margin: 20px 0; color: #9ca3af; font-size: 12px; }
-        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
-        .divider span { padding: 0 10px; }
-
-        .btn-google { width: 100%; padding: 10px; background: white; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-google:hover { background: #f9fafb; }
-
-        .alert-error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; display: none; }
-
-        /* Giao diện Trang chủ (Dashboard) */
-        #app-screen { display: none; height: 100vh; flex-direction: row; }
-
-        .sidebar { width: 260px; background: #1e1b4b; color: white; display: flex; flex-direction: column; padding: 20px 0; }
-        .brand { padding: 0 24px 24px; font-size: 20px; font-weight: 700; color: #818cf8; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #312e81; }
-
-        .nav-menu { list-style: none; padding: 20px 12px; flex: 1; }
-        .nav-item { margin-bottom: 4px; }
-        .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #a5b4fc; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; }
-        .nav-link:hover, .nav-link.active { background: #312e81; color: white; }
-
-        .user-profile { padding: 16px 20px; border-top: 1px solid #312e81; display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; overflow: hidden; }
-        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .user-details { flex: 1; overflow: hidden; }
-        .user-name { font-size: 14px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-        .user-email { font-size: 11px; color: #a5b4fc; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-        .btn-logout { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 4px; }
-
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: #f9fafb; }
-        .header { background: white; padding: 16px 32px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { font-size: 20px; font-weight: 700; }
-
-        .page-section { padding: 32px; display: none; }
-        .page-section.active { display: block; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; }
-        .stat-card h3 { font-size: 13px; color: #6b7280; font-weight: 500; }
-        .stat-card p { font-size: 24px; font-weight: 700; margin-top: 8px; color: #111827; }
-
-        .settings-card { background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb; max-width: 600px; }
+        .after-card a:hover {
+            text-decoration: underline;
+        }
+        /* Style cho vùng thả file */
+        .upload-area {
+            border: 2px dashed #0d6efd;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            background-color: #e9ecef;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body>
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
-    <div id="auth-screen">
-        <div class="auth-card">
-            <div class="auth-header">
-                <h2>Cổng Thông Tin</h2>
-                <p>Đăng nhập hoặc tạo tài khoản thật</p>
-            </div>
+<body class="d-flex flex-column min-vh-100">
 
-            <div id="errorAlert" class="alert-error"></div>
-
-            <div class="tab-buttons">
-                <button class="tab-btn active" id="tab-login-btn" onclick="switchAuthTab('login')">Đăng nhập</button>
-                <button class="tab-btn" id="tab-register-btn" onclick="switchAuthTab('register')">Đăng ký</button>
-            </div>
-
-            <!-- Form Đăng nhập -->
-            <form id="loginForm">
-                <div class="form-group">
-                    <label>Địa chỉ Email</label>
-                    <input type="email" id="loginEmail" placeholder="email@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Mật khẩu</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn-primary">Đăng nhập</button>
-            </form>
-
-            <!-- Form Đăng ký -->
-            <form id="registerForm" style="display: none;">
-                <div class="form-group">
-                    <label>Địa chỉ Email</label>
-                    <input type="email" id="regEmail" placeholder="email@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Mật khẩu (Tối thiểu 6 ký tự)</label>
-                    <input type="password" id="regPassword" placeholder="••••••••" minlength="6" required>
-                </div>
-                <button type="submit" class="btn-primary">Tạo tài khoản</button>
-            </form>
-
-            <div class="divider"><span>HOẶC</span></div>
-
-            <button class="btn-google" onclick="loginGoogle()">
-                <i class="fa-brands fa-google" style="color: #ea4335;"></i> Đăng nhập bằng Google
-            </button>
-        </div>
-    </div>
-
-    <!-- MÀN HÌNH TRANG CHỦ CHÍNH (DASHBOARD) -->
-    <div id="app-screen">
-        <aside class="sidebar">
-            <div class="brand">
-                <i class="fa-solid fa-cube"></i> Trang Chủ Chính
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a class="nav-link active" onclick="switchPage('dashboard', this)">
-                        <i class="fa-solid fa-house"></i> Trang chủ
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" onclick="switchPage('profile', this)">
-                        <i class="fa-solid fa-user"></i> Trang cá nhân
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" onclick="switchPage('settings', this)">
-                        <i class="fa-solid fa-gear"></i> Cài đặt
-                    </a>
-                </li>
-            </ul>
-
-            <div class="user-profile">
-                <div class="user-avatar" id="avatarDisplay">U</div>
-                <div class="user-details">
-                    <div class="user-name" id="userNameDisplay">User</div>
-                    <div class="user-email" id="userEmailDisplay">user@example.com</div>
-                </div>
-                <button class="btn-logout" onclick="logout()" title="Đăng xuất">
-                    <i class="fa-solid fa-right-from-bracket"></i>
+    <!-- START NAVBAR -->
+    <header>
+        <nav class="navbar navbar-expand-md navbar-dark bg-primary shadow-sm align-middle">
+            <div class="container px-3">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-box px-2"></i>byyxd Storage
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
                 </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto" id="navAuthMenu">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="#" id="navLoginBtn" onclick="showAuthTab('login')">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white-50" href="#" id="navRegisterBtn" onclick="showAuthTab('register')">Sign Up</a>
+                        </li>
+                    </ul>
+                    <div class="d-none text-white align-items-center gap-3" id="navUserMenu">
+                        <span id="userDisplayEmail" class="fw-bold"><i class="bi bi-person-circle me-1"></i> user@domain.com</span>
+                        <button class="btn btn-outline-light btn-sm" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                    </div>
+                </div>
             </div>
-        </aside>
+        </nav>
+    </header>
+    <!-- END NAVBAR -->
 
-        <main class="main-content">
-            <header class="header">
-                <h1 id="pageTitle">Trang chủ</h1>
-            </header>
+    <main class="flex-grow-1">
+        <div class="container p-3 py-4 mb-3" id="content">
 
-            <section id="page-dashboard" class="page-section active">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>Trạng thái</h3>
-                        <p style="color: #10b981;">Đã đăng nhập</p>
+            <!-- 1. MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ -->
+            <div class="row justify-content-center pt-4" id="authSection">
+                <div class="col-lg-4 col-md-6">
+                    
+                    <div class="alert alert-secondary alert-dismissible fade show" role="alert" id="welcomeAlert">
+                        Welcome Friend
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                    <div class="stat-card">
-                        <h3>Loại tài khoản</h3>
-                        <p>Thành viên</p>
+
+                    <!-- CARD ĐĂNG NHẬP -->
+                    <div class="card shadow-sm mb-4" id="loginCard">
+                        <div class="card-header h5 p-3 bg-white">Login</div>
+                        <div class="card-body">
+                            <form id="loginForm">
+                                <div class="form-group mb-3">
+                                    <label for="loginEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="loginEmail" placeholder="Your email address" required>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="loginPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="loginPassword" placeholder="Your password" required minlength="6">
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" class="form-check-input" id="stay_log">
+                                    <label class="form-check-label text-muted small" for="stay_log">Stay logged in?</label>
+                                </div>
+                                <div class="form-group mb-2">
+                                    <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-box-arrow-in-right"></i> Login</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-                <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb;">
-                    <h2>Bạn đã truy cập thành công!</h2>
-                    <p style="color: #6b7280; margin-top: 8px;">Đây là khu vực riêng tư dành cho tài khoản đã được xác thực qua Firebase.</p>
-                </div>
-            </section>
 
-            <section id="page-profile" class="page-section">
-                <div class="settings-card">
-                    <h2 style="margin-bottom: 16px;">Hồ sơ cá nhân</h2>
-                    <p><strong>Email:</strong> <span id="profileEmail">...</span></p>
-                    <p style="margin-top: 8px;"><strong>Mã định danh User ID:</strong> <span id="profileUid">...</span></p>
-                </div>
-            </section>
+                    <!-- CARD ĐĂNG KÝ -->
+                    <div class="card shadow-sm mb-4 d-none" id="registerCard">
+                        <div class="card-header h5 p-3 bg-white">Sign Up</div>
+                        <div class="card-body">
+                            <form id="registerForm">
+                                <div class="form-group mb-3">
+                                    <label for="regEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="regEmail" placeholder="Enter your email" required>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="regPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="regPassword" placeholder="Minimum 6 characters" required minlength="6">
+                                </div>
+                                <div class="form-group mb-2">
+                                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus"></i> Create Account</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
 
-            <section id="page-settings" class="page-section">
-                <div class="settings-card">
-                    <h2 style="margin-bottom: 16px;">Cài đặt hệ thống</h2>
-                    <p style="color: #6b7280;">Tính năng đang được phát triển thêm...</p>
+                    <p class="text-center text-muted after-card">
+                        <small class="bg-white px-3 py-2 rounded shadow-sm d-inline-block" id="switchAuthFooter">
+                            Don't have an account?
+                            <a href="#" onclick="showAuthTab('register')" class="text-primary fw-bold">Sign Up</a>
+                        </small>
+                    </p>
                 </div>
-            </section>
-        </main>
-    </div>
+            </div>
 
-    <!-- XỬ LÝ FIREBASE -->
+            <!-- 2. MÀN HÌNH QUẢN LÝ FILE (DASHBOARD) -->
+            <div class="row justify-content-center pt-2 d-none" id="dashboardSection">
+                <div class="col-lg-10">
+                    
+                    <!-- UPLOAD CARD -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body text-center p-4">
+                            <div class="upload-area p-4 mb-3" onclick="document.getElementById('fileInput').click()">
+                                <i class="bi bi-cloud-arrow-up text-primary display-4"></i>
+                                <h5 class="mt-2">Drag & Drop files here or click to Upload</h5>
+                                <p class="text-muted small m-0">Hỗ trợ tất cả định dạng tài liệu, hình ảnh, tập tin lưu trữ</p>
+                            </div>
+                            <input type="file" id="fileInput" class="d-none" onchange="uploadFile(event)">
+                            <div id="uploadStatus" class="fw-bold text-primary"></div>
+                        </div>
+                    </div>
+
+                    <!-- FILE LIST TABLE CARD -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white h5 p-3 d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-folder2-open me-2 text-primary"></i>My Stored Files</span>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadUserFiles()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle m-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">File Name</th>
+                                            <th>Size</th>
+                                            <th class="text-end pe-3">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="fileTableBody">
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">Loading your files...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-light border-top py-3 text-muted mt-auto w-100">
+        <div class="container d-flex justify-content-center align-items-center">
+            <small>© 2026 - byyxd Storage</small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- FIREBASE SDK MODULES -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { 
-            getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
-            signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         // =========================================================================
-        // DÁN THÔNG SỐ FIREBASE CỦA BẠN VÀO CÁC DÒNG BÊN DƯỚI DẪN TỚI KHÔNG CÒN BỊ LỖI
+        // THAY THẾ CÁC THÔNG SỐ CONFIG DƯỚI ĐÂY BẰNG CỦA BẠN TRÊN FIREBASE CONSOLE
         // =========================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyD-xxxxxxxxxxxxxxxxxxxx", // Thay mã thật từ Firebase
-            authDomain: "your-app.firebaseapp.com",
-            projectId: "your-app",
-            storageBucket: "your-app.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:abcdef123456"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        let auth;
-        try {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            const provider = new GoogleAuthProvider();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+        let currentUser = null;
 
-            // Lắng nghe phiên đăng nhập
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('app-screen').style.display = 'flex';
+        // Trạng thái Đăng nhập / Đăng xuất
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('authSection').classList.add('d-none');
+                document.getElementById('dashboardSection').classList.remove('d-none');
+                
+                document.getElementById('navAuthMenu').classList.add('d-none');
+                document.getElementById('navUserMenu').classList.replace('d-none', 'd-flex');
+                document.getElementById('userDisplayEmail').innerHTML = `<i class="bi bi-person-circle me-1"></i> ${user.email}`;
 
-                    const email = user.email || 'Người dùng';
-                    document.getElementById('userEmailDisplay').innerText = email;
-                    document.getElementById('userNameDisplay').innerText = user.displayName || email.split('@')[0];
-                    document.getElementById('profileEmail').innerText = email;
-                    document.getElementById('profileUid').innerText = user.uid;
+                loadUserFiles();
+            } else {
+                currentUser = null;
+                document.getElementById('authSection').classList.remove('d-none');
+                document.getElementById('dashboardSection').classList.add('d-none');
+                
+                document.getElementById('navAuthMenu').classList.remove('d-none');
+                document.getElementById('navUserMenu').classList.replace('d-flex', 'd-none');
+            }
+        });
 
-                    if (user.photoURL) {
-                        document.getElementById('avatarDisplay').innerHTML = `<img src="${user.photoURL}">`;
-                    } else {
-                        document.getElementById('avatarDisplay').innerText = email.charAt(0).toUpperCase();
-                    }
-                } else {
-                    document.getElementById('auth-screen').style.display = 'flex';
-                    document.getElementById('app-screen').style.display = 'none';
+        // Đăng nhập
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+
+            signInWithEmailAndPassword(auth, email, pass)
+                .then(() => {
+                    Swal.fire({ icon: 'success', title: 'Login Successful', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                })
+                .catch(err => {
+                    Swal.fire({ icon: 'error', title: 'Login Failed', text: err.message });
+                });
+        });
+
+        // Đăng ký
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('regEmail').value;
+            const pass = document.getElementById('regPassword').value;
+
+            createUserWithEmailAndPassword(auth, email, pass)
+                .then(() => {
+                    Swal.fire({ icon: 'success', title: 'Account Created!', text: 'You are now logged in.' });
+                })
+                .catch(err => {
+                    Swal.fire({ icon: 'error', title: 'Registration Failed', text: err.message });
+                });
+        });
+
+        // Đăng xuất
+        window.logout = () => signOut(auth);
+
+        // Upload File
+        window.uploadFile = async (e) => {
+            const file = e.target.files[0];
+            if (!file || !currentUser) return;
+
+            const status = document.getElementById('uploadStatus');
+            status.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Uploading ${file.name}...`;
+
+            try {
+                const fileRef = ref(storage, `users/${currentUser.uid}/${file.name}`);
+                await uploadBytes(fileRef, file);
+                
+                status.innerText = "";
+                Swal.fire({ icon: 'success', title: 'Uploaded Successfully', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                loadUserFiles();
+            } catch (error) {
+                status.innerText = "";
+                Swal.fire({ icon: 'error', title: 'Upload Failed', text: error.message });
+            }
+        };
+
+        // Lấy danh sách File của tài khoản đang đăng nhập
+        window.loadUserFiles = async () => {
+            const tbody = document.getElementById('fileTableBody');
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading files...</td></tr>`;
+
+            try {
+                const userFolder = ref(storage, `users/${currentUser.uid}`);
+                const res = await listAll(userFolder);
+
+                if (res.items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted"><i class="bi bi-inbox display-6 d-block mb-2"></i>No files uploaded yet.</td></tr>`;
+                    return;
                 }
-            });
 
-            // Xử lý Đăng ký
-            document.getElementById('registerForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                showError('');
-                const email = document.getElementById('regEmail').value;
-                const password = document.getElementById('regPassword').value;
+                tbody.innerHTML = "";
+                for (const itemRef of res.items) {
+                    const url = await getDownloadURL(itemRef);
+                    const meta = await getMetadata(itemRef);
+                    const sizeMB = (meta.size / (1024 * 1024)).toFixed(2) + " MB";
 
-                createUserWithEmailAndPassword(auth, email, password)
-                    .catch((error) => showError("Lỗi đăng ký: " + error.message));
-            });
-
-            // Xử lý Đăng nhập
-            document.getElementById('loginForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                showError('');
-                const email = document.getElementById('loginEmail').value;
-                const password = document.getElementById('loginPassword').value;
-
-                signInWithEmailAndPassword(auth, email, password)
-                    .catch((error) => showError("Lỗi đăng nhập: " + error.message));
-            });
-
-            // Đăng nhập Google
-            window.loginGoogle = () => {
-                showError('');
-                signInWithPopup(auth, provider).catch((error) => showError("Lỗi Google: " + error.message));
-            };
-
-            // Đăng xuất
-            window.logout = () => {
-                signOut(auth);
-            };
-
-        } catch (e) {
-            showError("Cấu hình API Key chưa chính xác! Vui lòng cập nhật firebaseConfig.");
-        }
-
-        function showError(msg) {
-            const box = document.getElementById('errorAlert');
-            if (msg) {
-                box.innerText = msg;
-                box.style.display = 'block';
-            } else {
-                box.style.display = 'none';
-            }
-        }
-
-        // Chuyển tab Đăng nhập/Đăng ký
-        window.switchAuthTab = (type) => {
-            showError('');
-            if (type === 'login') {
-                document.getElementById('loginForm').style.display = 'block';
-                document.getElementById('registerForm').style.display = 'none';
-                document.getElementById('tab-login-btn').classList.add('active');
-                document.getElementById('tab-register-btn').classList.remove('active');
-            } else {
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('registerForm').style.display = 'block';
-                document.getElementById('tab-register-btn').classList.add('active');
-                document.getElementById('tab-login-btn').classList.remove('active');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="ps-3"><i class="bi bi-file-earmark-text text-primary me-2"></i><strong>${itemRef.name}</strong></td>
+                        <td><span class="badge bg-light text-dark border">${sizeMB}</span></td>
+                        <td class="text-end pe-3">
+                            <a href="${url}" target="_blank" class="btn btn-sm btn-outline-success me-1" title="Download"><i class="bi bi-download"></i></a>
+                            <button onclick="deleteFile('${itemRef.name}')" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">Error loading files: ${err.message}</td></tr>`;
             }
         };
 
-        // Chuyển trang trong Dashboard
-        window.switchPage = (pageName, element) => {
-            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+        // Xóa File
+        window.deleteFile = async (fileName) => {
+            const confirm = await Swal.fire({
+                title: 'Delete file?',
+                text: `Are you sure you want to delete "${fileName}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, delete it!'
+            });
 
-            document.getElementById(`page-${pageName}`).classList.add('active');
-            element.classList.add('active');
+            if (confirm.isConfirmed) {
+                try {
+                    const fileRef = ref(storage, `users/${currentUser.uid}/${fileName}`);
+                    await deleteObject(fileRef);
+                    Swal.fire({ icon: 'success', title: 'Deleted!', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                    loadUserFiles();
+                } catch (err) {
+                    Swal.fire({ icon: 'error', title: 'Delete Failed', text: err.message });
+                }
+            }
+        };
 
-            const titles = { 'dashboard': 'Trang chủ', 'profile': 'Trang cá nhân', 'settings': 'Cài đặt' };
-            document.getElementById('pageTitle').innerText = titles[pageName];
+        // Chuyển tab giữa Đăng nhập và Đăng ký
+        window.showAuthTab = (tab) => {
+            const loginCard = document.getElementById('loginCard');
+            const registerCard = document.getElementById('registerCard');
+            const footer = document.getElementById('switchAuthFooter');
+            const navLogin = document.getElementById('navLoginBtn');
+            const navReg = document.getElementById('navRegisterBtn');
+
+            if (tab === 'login') {
+                loginCard.classList.remove('d-none');
+                registerCard.classList.add('d-none');
+                navLogin.classList.remove('text-white-50');
+                navReg.classList.add('text-white-50');
+                footer.innerHTML = `Don't have an account? <a href="#" onclick="showAuthTab('register')" class="text-primary fw-bold">Sign Up</a>`;
+            } else {
+                loginCard.classList.add('d-none');
+                registerCard.classList.remove('d-none');
+                navReg.classList.remove('text-white-50');
+                navLogin.classList.add('text-white-50');
+                footer.innerHTML = `Already have an account? <a href="#" onclick="showAuthTab('login')" class="text-primary fw-bold">Login</a>`;
+            }
         };
     </script>
 </body>
