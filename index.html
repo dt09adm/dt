@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập & Đăng ký</title>
+    <!-- FontAwesome hỗ trợ icon Google & Facebook -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        /* Thanh chuyển đổi giữa Đăng nhập và Đăng ký */
+        .tab-header {
+            display: flex;
+            background-color: #f1f5f9;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            border: none;
+            background: none;
+            font-weight: 600;
+            font-size: 16px;
+            color: #64748b;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background-color: #ffffff;
+            color: #4f46e5;
+            border-bottom: 3px solid #4f46e5;
+        }
+
+        .form-content {
+            padding: 30px 25px;
+        }
+
+        .form-box {
+            display: none;
+        }
+
+        .form-box.active {
+            display: block;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #1e293b;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            background-color: #4338ca;
+        }
+
+        /* Phân cách giữa 2 hình thức */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .divider span {
+            padding: 0 10px;
+        }
+
+        /* Đăng nhập Mạng xã hội */
+        .social-login {
+            display: flex;
+            gap: 12px;
+        }
+
+        .social-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .social-btn:hover {
+            background-color: #f8fafc;
+        }
+
+        .social-btn.google i { color: #ea4335; }
+        .social-btn.facebook i { color: #1877f2; }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <!-- Nút chuyển đổi Đăng nhập / Đăng ký -->
+    <div class="tab-header">
+        <button class="tab-btn active" onclick="switchTab('login')">Đăng nhập</button>
+        <button class="tab-btn" onclick="switchTab('register')">Đăng ký</button>
+    </div>
+
+    <div class="form-content">
+        <!-- FORM 1: ĐĂNG NHẬP -->
+        <div id="login-form" class="form-box active">
+            <h2>Chào mừng quay lại!</h2>
+
+            <!-- Hệ thống 1: Đăng nhập bằng Email/Mật khẩu -->
+            <form onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="email@vi-du.com" required>
+                </div>
+                <div class="input-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit">Đăng nhập</button>
+            </form>
+
+            <div class="divider">
+                <span>HOẶC ĐĂNG NHẬP VỚI</span>
+            </div>
+
+            <!-- Hệ thống 2: Đăng nhập bằng OAuth (Google/Facebook) -->
+            <div class="social-login">
+                <button class="social-btn google" onclick="socialLogin('Google')">
+                    <i class="fa-brands fa-google"></i> Google
+                </button>
+                <button class="social-btn facebook" onclick="socialLogin('Facebook')">
+                    <i class="fa-brands fa-facebook"></i> Facebook
+                </button>
+            </div>
+        </div>
+
+        <!-- FORM 2: ĐĂNG KÝ TÀI KHOẢN MỚI -->
+        <div id="register-form" class="form-box">
+            <h2>Tạo tài khoản mới</h2>
+            <form onsubmit="handleRegister(event)">
+                <div class="input-group">
+                    <label for="reg-name">Họ và tên</label>
+                    <input type="text" id="reg-name" placeholder="Nguyễn Văn A" required>
+                </div>
+                <div class="input-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" placeholder="email@vi-du.com" required>
+                </div>
+                <div class="input-group">
+                    <label for="reg-password">Mật khẩu</label>
+                    <input type="password" id="reg-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit">Tạo tài khoản</button>
+            </form>
+
+            <div class="divider">
+                <span>HOẶC ĐĂNG KÝ VỚI</span>
+            </div>
+
+            <div class="social-login">
+                <button class="social-btn google" onclick="socialLogin('Google')">
+                    <i class="fa-brands fa-google"></i> Google
+                </button>
+                <button class="social-btn facebook" onclick="socialLogin('Facebook')">
+                    <i class="fa-brands fa-facebook"></i> Facebook
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Chuyển đổi giữa 2 tab Đăng nhập và Đăng ký
+    function switchTab(tab) {
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const tabs = document.querySelectorAll('.tab-btn');
+
+        if (tab === 'login') {
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+            tabs[0].classList.add('active');
+            tabs[1].classList.remove('active');
+        } else {
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+            tabs[1].classList.add('active');
+            tabs[0].classList.remove('active');
+        }
+    }
+
+    // Xử lý sự kiện đăng nhập tài khoản
+    function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        alert(`Đang xử lý đăng nhập cho: ${email}`);
+        // Thêm code gửi dữ liệu lên Backend tại đây
+    }
+
+    // Xử lý sự kiện đăng ký
+    function handleRegister(e) {
+        e.preventDefault();
+        const name = document.getElementById('reg-name').value;
+        alert(`Đã đăng ký thành công cho: ${name}`);
+        // Thêm code gửi dữ liệu lên Backend tại đây
+    }
+
+    // Xử lý đăng nhập bằng Mạng xã hội
+    function socialLogin(provider) {
+        alert(`Đang chuyển hướng đăng nhập bằng ${provider}...`);
+        // Thêm tích hợp OAuth SDK của Google/Facebook tại đây
+    }
+</script>
+
+</body>
+</html>
+
