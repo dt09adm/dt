@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dt09 — Tải Game</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="top-bar">
+      <div class="top-bar-title">
+        <span class="top-bar-title-icon">🎮</span>
+        dt09
+      </div>
+    </div>
+
+    <main class="main-content">
+      <div class="section-header-card">
+        <div class="section-icon-box">🕹️</div>
+        <div class="section-title">
+          <h3>Danh Sách Game</h3>
+          <p>Bấm chọn 1 game để xem chi tiết và tải về</p>
+        </div>
+      </div>
+
+      <div class="main-box">
+        <div class="box-label"><span class="section-icon">🎮</span> CHỌN GAME</div>
+
+        <div class="game-grid">
+          <div class="game-tile active" data-game="freefire">
+            <div class="game-tile-icon">🔥</div>
+            <div class="game-tile-name">Free Fire MAX</div>
+          </div>
+          <div class="game-tile" data-game="lienquan">
+            <div class="game-tile-icon">⚔️</div>
+            <div class="game-tile-name">Liên Quân Mobile</div>
+          </div>
+          <div class="game-tile" data-game="pubg">
+            <div class="game-tile-icon">🪂</div>
+            <div class="game-tile-name">PUBG Mobile</div>
+          </div>
+        </div>
+
+        <div class="game-detail" id="game-detail">
+          <div class="box-label"><span class="section-icon">📄</span> <span id="detail-name" class="detail-name-highlight">Free Fire MAX</span></div>
+          <p class="detail-desc" id="detail-desc">
+            Game sinh tồn bắn súng Battle Royale, tối đa 50 người chơi một trận, đồ hoạ mượt và tối ưu cho điện thoại tầm trung.
+          </p>
+          <a href="https://play.google.com/store/apps/details?id=com.dts.freefiremax" target="_blank" rel="noopener noreferrer" id="download-btn" class="download-btn">
+            <span>▶</span> Tải trên Google Play
+          </a>
+          <p class="detail-note">Bấm vào nút trên sẽ chuyển sang trang chính thức của game trên Google Play.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
