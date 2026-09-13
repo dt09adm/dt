@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>dt09 - Admin Control Panel</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-main: #060814;
+      --card-bg: #111428;
+      --card-border: #1d2242;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --text-main: #ffffff;
+      --text-muted: #808aab;
+      --danger-red: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #020307; color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; padding: 10px; }
+
+    .admin-container {
+      width: 100%;
+      max-width: 500px;
+      background: radial-gradient(circle at top, #181538 0%, #060814 80%);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; }
+    .admin-header h2 { font-size: 18px; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
+    .card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #a78bfa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .form-group label { font-size: 11px; color: var(--text-muted); font-weight: 700; }
+    .form-control { background: #151833; border: 1px solid #23284c; border-radius: 10px; padding: 10px; color: white; font-size: 13px; outline: none; width: 100%; }
+    
+    .btn { border: none; padding: 10px 14px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-green { background: linear-gradient(135deg, #059669, #10b981); color: white; }
+    .btn-purple { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; }
+    .btn-danger { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
+    .btn-sm { padding: 6px 10px; font-size: 11px; }
+
+    .img-preview { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: #1a1e3b; border: 1px solid #2d345e; }
+    .preview-box { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+
+    .item-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 200px; overflow-y: auto; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #151833; border: 1px solid #23284c; border-radius: 8px; font-size: 12px; }
+    .list-item-info { display: flex; align-items: center; gap: 8px; }
+
+    .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #151833; border: 1px solid #23284c; border-radius: 10px; margin-bottom: 8px; font-size: 12px; }
+    .user-info div { margin-bottom: 2px; }
+    .user-email { font-weight: 800; color: #38bdf8; }
+    .user-balance { color: #eab308; font-weight: 800; }
+  </style>
+</head>
+<body>
+
+  <div class="admin-container">
+    <div class="admin-header">
+      <h2><i class="fa-solid fa-user-shield"></i> dt09 Admin Panel</h2>
+    </div>
+
+    <!-- 1. THÊM / CẬP NHẬT / XÓA GAME -->
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-gamepad"></i> Danh Mục Game</div>
+      
+      <div class="form-group">
+        <label>Tên Game (ví dụ: Roblox, Free Fire...)</label>
+        <input type="text" id="gameNameInput" class="form-control" placeholder="Nhập tên game">
+      </div>
+      
+      <div class="form-group">
+        <label>Ảnh/Icon Logo Game (Chọn từ thiết bị)</label>
+        <div class="preview-box">
+          <input type="file" id="gameIconFileInput" accept="image/*" class="form-control" style="flex:1" onchange="previewLocalImage('gameIconFileInput', 'gameIconPreview')">
+          <img id="gameIconPreview" class="img-preview" src="https://api.dicebear.com/7.x/identicon/svg?seed=Game" alt="preview">
+        </div>
+        <input type="text" id="gameIconInput" class="form-control" style="margin-top: 5px;" placeholder="Hoặc dán URL ảnh tại đây..." oninput="updatePreview('gameIconInput', 'gameIconPreview')">
+      </div>
+
+      <button class="btn btn-purple" style="width: 100%;" onclick="saveGameCategory()">
+        <i class="fa-solid fa-plus"></i> LƯU GAME
+      </button>
+
+      <!-- Danh sách Game hiện có để Xóa -->
+      <div style="margin-top: 14px; font-size: 11px; font-weight: 700; color: var(--text-muted);">DANH SÁCH GAME HIỆN CÓ:</div>
+      <div id="gameList" class="item-list">Đang tải...</div>
+    </div>
+
+    <!-- 2. THÊM / CẬP NHẬT / XÓA ỨNG DỤNG -->
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-link"></i> Quản Lý Ứng Dụng & Link Tải</div>
+      
+      <div class="form-group">
+        <label>Thuộc Danh Mục Game</label>
+        <select id="gameSelectDropdown" class="form-control" onchange="loadAppList()"></select>
+      </div>
+
+      <div class="form-group">
+        <label>Tên Ứng dụng / Tool (ví dụ: Delta Executor)</label>
+        <input type="text" id="appNameInput" class="form-control" placeholder="Nhập tên ứng dụng">
+      </div>
+
+      <div class="form-group">
+        <label>Ảnh/Icon Ứng Dụng (Chọn từ thiết bị)</label>
+        <div class="preview-box">
+          <input type="file" id="appIconFileInput" accept="image/*" class="form-control" style="flex:1" onchange="previewLocalImage('appIconFileInput', 'appIconPreview')">
+          <img id="appIconPreview" class="img-preview" src="https://api.dicebear.com/7.x/bottts/svg?seed=App" alt="preview">
+        </div>
+        <input type="text" id="appIconInput" class="form-control" style="margin-top: 5px;" placeholder="Hoặc dán URL ảnh tại đây..." oninput="updatePreview('appIconInput', 'appIconPreview')">
+      </div>
+
+      <div class="form-group">
+        <label>Đường Link Tải Xuống (URL)</label>
+        <input type="text" id="downloadUrlInput" class="form-control" placeholder="https://deltaexploits.gg/...">
+      </div>
+
+      <button class="btn btn-green" style="width: 100%;" onclick="saveAppLink()">
+        <i class="fa-solid fa-floppy-disk"></i> LƯU ỨNG DỤNG
+      </button>
+
+      <!-- Danh sách App hiện có để Xóa -->
+      <div style="margin-top: 14px; font-size: 11px; font-weight: 700; color: var(--text-muted);">DANH SÁCH ỨNG DỤNG THUỘC GAME TRÊN:</div>
+      <div id="appList" class="item-list">Đang tải...</div>
+    </div>
+
+    <!-- 3. TẠO GIFTCODE -->
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-gift"></i> Tạo Mã Giftcode / Voucher</div>
+      <div class="form-group">
+        <label>Mã Code</label>
+        <input type="text" id="gcCode" class="form-control" placeholder="Ví dụ: FREEMONEY">
+      </div>
+      <div class="form-group">
+        <label>Loại Phần Thưởng</label>
+        <select id="gcType" class="form-control">
+          <option value="money">Cộng Tiền (VNĐ)</option>
+          <option value="spin">Cộng Lượt Quay</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Giá Trị Phần Thưởng</label>
+        <input type="number" id="gcValue" class="form-control" placeholder="10000">
+      </div>
+      <div class="form-group">
+        <label>Số Lượt Sử Dụng Tối Đa</label>
+        <input type="number" id="gcMaxUses" class="form-control" value="50">
+      </div>
+      <button class="btn btn-green" style="width: 100%; margin-top: 4px;" onclick="createGiftcode()">
+        <i class="fa-solid fa-plus"></i> TẠO GIFTCODE
+      </button>
+    </div>
+
+    <!-- 4. QUẢN LÝ THÀNH VIÊN -->
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-users"></i> Quản Lý Số Dư Thành Viên</div>
+      <div id="userListContainer">Đang tải...</div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    window.onload = async function() {
+      await loadGames();
+      await loadUserList();
+    };
+
+    // TẢI ẢNH LÊN SUPABASE STORAGE
+    async function uploadImageFile(fileInputId) {
+      const fileInput = document.getElementById(fileInputId);
+      if (!fileInput.files || fileInput.files.length === 0) return null;
+
+      const file = fileInput.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      const { data, error } = await supabaseClient.storage
+        .from('uploads')
+        .upload(fileName, file);
+
+      if (error) {
+        alert("Lỗi tải ảnh lên Supabase Storage: " + error.message);
+        return null;
+      }
+
+      const { data: publicUrlData } = supabaseClient.storage
+        .from('uploads')
+        .getPublicUrl(fileName);
+
+      return publicUrlData.publicUrl;
+    }
+
+    // HIỂN THỊ XEM TRƯỚC ẢNH TỪ FILE TẢI LÊN
+    function previewLocalImage(inputId, imgId) {
+      const fileInput = document.getElementById(inputId);
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById(imgId).src = e.target.result;
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+    }
+
+    // HIỂN THỊ XEM TRƯỚC ẢNH TỪ URL
+    function updatePreview(inputId, imgId) {
+      const url = document.getElementById(inputId).value.trim();
+      if(url) {
+        document.getElementById(imgId).src = url;
+      }
+    }
+
+    // LOAD GAME VÀ HIỂN THỊ DANH SÁCH GAME CÓ NÚT XÓA
+    async function loadGames() {
+      const dropdown = document.getElementById('gameSelectDropdown');
+      const gameListDiv = document.getElementById('gameList');
+      dropdown.innerHTML = '';
+      gameListDiv.innerHTML = '';
+
+      if (typeof supabaseClient === 'undefined') return;
+
+      const { data: games, error } = await supabaseClient.from('games').select('*');
+
+      if (error || !games || games.length === 0) {
+        gameListDiv.innerHTML = '<div style="font-size:11px; color:#808aab;">Chưa có game nào trong CSDL</div>';
+        return;
+      }
+
+      games.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.game_name;
+        opt.innerText = g.game_name;
+        dropdown.appendChild(opt);
+
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        const imgIcon = g.icon_url || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + g.game_name;
+        item.innerHTML = `
+          <div class="list-item-info">
+            <img src="${imgIcon}" class="img-preview" style="width:24px; height:24px;">
+            <span style="font-weight:700;">${g.game_name}</span>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteGame(${g.id}, '${g.game_name}')">
+            <i class="fa-solid fa-trash"></i> Xóa
+          </button>
+        `;
+        gameListDiv.appendChild(item);
+      });
+
+      loadAppList();
+    }
+
+    // LƯU GAME
+    async function saveGameCategory() {
+      const gameName = document.getElementById('gameNameInput').value.trim();
+      if (!gameName) return alert("Vui lòng nhập tên game!");
+
+      // Tải ảnh từ thiết bị nếu có, nếu không thì lấy link URL
+      let iconUrl = await uploadImageFile('gameIconFileInput');
+      if (!iconUrl) {
+        iconUrl = document.getElementById('gameIconInput').value.trim();
+      }
+
+      const { error } = await supabaseClient
+        .from('games')
+        .upsert([{ game_name: gameName, icon_url: iconUrl }], { onConflict: 'game_name' });
+
+      if (error) {
+        alert("Lỗi lưu game: " + error.message);
+      } else {
+        alert("🎉 Đã lưu danh mục Game!");
+        document.getElementById('gameNameInput').value = '';
+        document.getElementById('gameIconInput').value = '';
+        document.getElementById('gameIconFileInput').value = '';
+        loadGames();
+      }
+    }
+
+    // XÓA GAME
+    async function deleteGame(id, gameName) {
+      if (!confirm(`Bạn có chắc muốn xóa Game "${gameName}" không?`)) return;
+
+      const { error } = await supabaseClient.from('games').delete().eq('id', id);
+
+      if (error) {
+        alert("Lỗi xóa game: " + error.message);
+      } else {
+        alert("🗑️ Đã xóa Game thành công!");
+        loadGames();
+      }
+    }
+
+    // LOAD DANH SÁCH ỨNG DỤNG THUỘC GAME ĐANG CHỌN
+    async function loadAppList() {
+      const gameName = document.getElementById('gameSelectDropdown').value;
+      const appListDiv = document.getElementById('appList');
+      appListDiv.innerHTML = '';
+
+      if (!gameName) return;
+
+      const { data: apps, error } = await supabaseClient.from('app_links').select('*').eq('game_name', gameName);
+
+      if (error || !apps || apps.length === 0) {
+        appListDiv.innerHTML = '<div style="font-size:11px; color:#808aab;">Chưa có ứng dụng nào cho game này</div>';
+        return;
+      }
+
+      apps.forEach(app => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        const imgIcon = app.icon_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + app.app_name;
+        item.innerHTML = `
+          <div class="list-item-info">
+            <img src="${imgIcon}" class="img-preview" style="width:24px; height:24px;">
+            <span style="font-weight:700;">${app.app_name}</span>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteApp(${app.id}, '${app.app_name}')">
+            <i class="fa-solid fa-trash"></i> Xóa
+          </button>
+        `;
+        appListDiv.appendChild(item);
+      });
+    }
+
+    // LƯU APP & LINK TẢI
+    async function saveAppLink() {
+      const gameName = document.getElementById('gameSelectDropdown').value;
+      const appName = document.getElementById('appNameInput').value.trim();
+      const downloadUrl = document.getElementById('downloadUrlInput').value.trim();
+
+      if (!appName || !downloadUrl) return alert("Vui lòng nhập tên ứng dụng và link tải!");
+
+      // Tải ảnh từ thiết bị nếu có, nếu không thì lấy link URL
+      let iconUrl = await uploadImageFile('appIconFileInput');
+      if (!iconUrl) {
+        iconUrl = document.getElementById('appIconInput').value.trim();
+      }
+
+      const { error } = await supabaseClient
+        .from('app_links')
+        .insert([{ 
+          game_name: gameName, 
+          app_name: appName, 
+          icon_url: iconUrl, 
+          download_url: downloadUrl 
+        }]);
+
+      if (error) {
+        alert("Lỗi cập nhật ứng dụng: " + error.message);
+      } else {
+        alert("🎉 Đã thêm ứng dụng thành công!");
+        document.getElementById('appNameInput').value = '';
+        document.getElementById('appIconInput').value = '';
+        document.getElementById('downloadUrlInput').value = '';
+        document.getElementById('appIconFileInput').value = '';
+        loadAppList();
+      }
+    }
+
+    // XÓA ỨNG DỤNG
+    async function deleteApp(id, appName) {
+      if (!confirm(`Bạn có chắc muốn xóa ứng dụng "${appName}" không?`)) return;
+
+      const { error } = await supabaseClient.from('app_links').delete().eq('id', id);
+
+      if (error) {
+        alert("Lỗi xóa ứng dụng: " + error.message);
+      } else {
+        alert("🗑️ Đã xóa ứng dụng thành công!");
+        loadAppList();
+      }
+    }
+
+    // TẠO GIFTCODE
+    async function createGiftcode() {
+      const code = document.getElementById('gcCode').value.trim().toUpperCase();
+      const type = document.getElementById('gcType').value;
+      const value = parseInt(document.getElementById('gcValue').value, 10);
+      const maxUses = parseInt(document.getElementById('gcMaxUses').value, 10);
+
+      if (!code || isNaN(value)) return alert("Vui lòng nhập mã code hợp lệ!");
+
+      const { error } = await supabaseClient.from('giftcodes').insert([{
+        code: code,
+        type: type,
+        value: value,
+        max_uses: maxUses,
+        used_count: 0
+      }]);
+
+      if (error) {
+        alert("Lỗi tạo mã: " + error.message);
+      } else {
+        alert("🎉 Tạo Giftcode thành công!");
+        document.getElementById('gcCode').value = '';
+      }
+    }
+
+    // LOAD DANH SÁCH USER
+    async function loadUserList() {
+      const container = document.getElementById('userListContainer');
+      const { data: profiles, error } = await supabaseClient.from('profiles').select('*');
+
+      if (error || !profiles || profiles.length === 0) {
+        container.innerHTML = '<div style="font-size: 12px; color: var(--text-muted);">Chưa có người dùng nào.</div>';
+        return;
+      }
+
+      let html = '';
+      profiles.forEach(u => {
+        html += `
+          <div class="user-item">
+            <div class="user-info">
+              <div class="user-email">${u.email || 'Không rõ Email'}</div>
+              <div>Số dư: <span class="user-balance">${(u.balance || 0).toLocaleString('vi-VN')}đ</span> | Lượt quay: ${u.spin_count || 0}</div>
+            </div>
+            <button class="btn btn-purple btn-sm" onclick="editUser('${u.id}', ${u.balance || 0}, ${u.spin_count || 0})">Sửa</button>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    async function editUser(userId, currentBal, currentSpin) {
+      const newBal = prompt("Nhập số dư mới (VNĐ):", currentBal);
+      if (newBal === null) return;
+      
+      const newSpin = prompt("Nhập số lượt quay mới:", currentSpin);
+      if (newSpin === null) return;
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ balance: parseInt(newBal, 10), spin_count: parseInt(newSpin, 10) })
+        .eq('id', userId);
+
+      if (error) {
+        alert("Cập nhật thất bại: " + error.message);
+      } else {
+        alert("Cập nhật thành công!");
+        loadUserList();
+      }
+    }
+  </script>
+</body>
+</html>
