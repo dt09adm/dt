@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>dt09 - Shop Game & Tool Auto 24/7</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-main: #060814;
+      --card-bg: #111428;
+      --card-border: #1d2242;
+      --accent-purple: #8b5cf6;
+      --accent-orange: #f97316;
+      --text-main: #ffffff;
+      --text-muted: #808aab;
+      --danger-red: #ef4444;
+      --success-green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      background-color: #020307;
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: radial-gradient(circle at top, #181538 0%, #060814 80%);
+      position: relative;
+      padding-bottom: 90px;
+      min-height: 100vh;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* --- GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ --- */
+    .auth-overlay {
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .auth-header h2 {
+      font-size: 24px;
+      color: var(--accent-purple);
+      margin-bottom: 6px;
+    }
+
+    .auth-header p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: #111428;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      padding: 4px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .auth-tab.active {
+      background: var(--accent-purple);
+      color: white;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .input-group input {
+      background: #151833;
+      border: 1px solid #23284c;
+      border-radius: 10px;
+      padding: 12px;
+      color: white;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent-purple);
+    }
+
+    .btn-auth {
+      background: linear-gradient(135deg, var(--accent-purple), #6d28d9);
+      border: none;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .auth-message {
+      font-size: 12px;
+      text-align: center;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+    .auth-message.error { color: var(--danger-red); }
+    .auth-message.success { color: var(--success-green); }
+
+    /* --- GIAO DIỆN CHÍNH SHOP --- */
+    .profile-header {
+      position: sticky;
+      top: 0;
+      z-index: 99;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(18, 17, 39, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 14px;
+    }
+
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 42px; height: 42px; border-radius: 50%; background: #3b82f6; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.15); }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-details .name { font-size: 13px; font-weight: 700; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-details .id { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .balance-pill { background: #141622; border: 1px solid #3d3113; color: #eab308; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 13px; }
+    .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 10px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+
+    /* Main Banner & Forms */
+    .banner-card { background: linear-gradient(135deg, #1d1b3c 0%, #12152e 100%); border: 1px solid var(--card-border); border-radius: 18px; margin: 0 14px 14px 14px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+    .banner-icon { width: 46px; height: 46px; background: #a855f7; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+    .banner-text h3 { font-size: 17px; font-weight: 800; }
+    .banner-text p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .form-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 14px; margin: 0 14px 12px 14px; }
+    .form-header { display: flex; justify-content: space-between; align-items: center; }
+    .form-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-title i { color: var(--accent-purple); background: rgba(139, 92, 246, 0.15); padding: 6px; border-radius: 8px; }
+    .select-btn { background: #191d38; border: 1px solid #2d345e; color: white; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+    .selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .grid-item { background: #151833; border: 1px solid #23284c; border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
+    .grid-item.selected { border-color: var(--accent-purple); background: rgba(139, 92, 246, 0.15); }
+    .grid-item img { width: 24px; height: 24px; border-radius: 6px; object-fit: cover; }
+
+    .package-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .pkg-card { background: #151833; border: 1px solid #23284c; border-radius: 14px; padding: 14px 10px; text-align: center; cursor: pointer; position: relative; }
+    .pkg-card.selected { border-color: #38bdf8; background: rgba(56, 189, 248, 0.08); box-shadow: 0 0 12px rgba(56, 189, 248, 0.2); }
+    .pkg-card.out-of-stock { border-color: #451a22; background: rgba(239, 68, 68, 0.05); cursor: not-allowed; }
+    .pkg-name { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+    .pkg-stock { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .pkg-stock span { color: #4ade80; font-weight: bold; }
+    .pkg-price { font-size: 14px; font-weight: 800; }
+    .badge-out { background: #ef4444; color: white; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 6px; display: inline-block; margin-top: 4px; }
+
+    .quantity-row { display: flex; justify-content: space-between; align-items: center; }
+    .qty-controls { display: flex; align-items: center; background: #181c38; border-radius: 10px; border: 1px solid #2d345e; }
+    .qty-btn { background: none; border: none; color: white; width: 36px; height: 34px; font-size: 16px; cursor: pointer; }
+    .qty-val { width: 34px; text-align: center; font-size: 14px; font-weight: 700; }
+
+    .alert-card { background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 14px; padding: 12px 14px; margin: 0 14px 14px 14px; }
+    .alert-title { color: #f59e0b; font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .alert-desc { font-size: 11px; color: #d1d5db; line-height: 1.4; }
+
+    .buy-action-row { display: flex; gap: 10px; margin: 0 14px 14px 14px; }
+    .icon-square-btn { width: 48px; height: 48px; background: #151833; border: 1px solid #23284c; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+    .btn-submit { flex: 1; height: 48px; border-radius: 12px; border: none; background: linear-gradient(135deg, #f97316, #ea580c); color: white; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
+    .btn-submit.disabled { background: #252a4a; color: #6b7280; box-shadow: none; cursor: not-allowed; }
+    .btn-submit small { font-size: 9px; opacity: 0.8; font-weight: 700; letter-spacing: 0.5px; }
+
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 60px; background: #060814; border-top: 1px solid #16182e; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+    .nav-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; cursor: pointer; width: 20%; }
+    .nav-btn.active { color: var(--accent-purple); font-weight: bold; }
+    .nav-btn i { font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- MÀN HÌNH XÁC THỰC (ĐĂNG NHẬP / ĐĂNG KÝ) -->
+    <div id="authScreen" class="auth-overlay">
+      <div class="auth-header">
+        <h2>dt09</h2>
+        <p>Hệ thống bán Key Game Auto 24/7</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">Đăng nhập</button>
+        <button class="auth-tab" id="tabSignupBtn" onclick="switchAuthTab('signup')">Đăng ký</button>
+      </div>
+
+      <!-- Form Đăng nhập -->
+      <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="nhap@email.com" required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-auth">ĐĂNG NHẬP</button>
+      </form>
+
+      <!-- Form Đăng ký -->
+      <form id="signupForm" class="auth-form hidden" onsubmit="handleSignup(event)">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="nhap@email.com" required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="signupPassword" placeholder="Tối thiểu 6 ký tự" required>
+        </div>
+        <button type="submit" class="btn-auth">TẠO TÀI KHOẢN</button>
+      </form>
+
+      <div id="authMessage" class="auth-message"></div>
+    </div>
+
+
+    <!-- MÀN HÌNH CHÍNH (SHOP GAME) -->
+    <div id="mainShopScreen" class="hidden">
+      <!-- Sticky Header -->
+      <div class="profile-header">
+        <div class="user-info">
+          <div class="user-avatar">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=DuyToan" alt="avatar">
+          </div>
+          <div class="user-details">
+            <div class="name" id="userDisplayName">User</div>
+            <div class="id" id="userIdDisplay">ID: ------</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="balance-pill"><span id="userBalance">0</span>đ</div>
+          <button class="btn-logout" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+
+      <!-- Banner -->
+      <div class="banner-card">
+        <div class="banner-icon"><i class="fa-solid fa-key"></i></div>
+        <div class="banner-text">
+          <h3>dt09</h3>
+          <p>Hệ thống tự động cấp Key</p>
+        </div>
+      </div>
+
+      <!-- STEP 1: CHỌN MỤC GAME -->
+      <div class="form-card">
+        <div class="form-header">
+          <div class="form-title">
+            <i class="fa-solid fa-gamepad"></i>
+            <span>Chọn mục game</span>
+          </div>
+          <button class="select-btn" onclick="toggleGameList()">
+            <span id="selectedGameText">Free Fire ADR&PC</span>
+            <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+          </button>
+        </div>
+
+        <div class="selection-grid" id="gameGrid">
+          <div class="grid-item selected" onclick="selectGame('Free Fire ADR&PC', this)">
+            <img src="https://api.dicebear.com/7.x/identicon/svg?seed=FF" alt="ff">
+            <span>Free Fire ADR&PC</span>
+          </div>
+          <div class="grid-item" onclick="selectGame('Free Fire IOS', this)">
+            <img src="https://api.dicebear.com/7.x/identicon/svg?seed=FFIOS" alt="ffios">
+            <span>Free Fire IOS</span>
+          </div>
+          <div class="grid-item" onclick="selectGame('PUBG IOS', this)">
+            <img src="https://api.dicebear.com/7.x/identicon/svg?seed=PUBG" alt="pubg">
+            <span>PUBG IOS</span>
+          </div>
+          <div class="grid-item" onclick="selectGame('Liên Quân Mobile IOS', this)">
+            <img src="https://api.dicebear.com/7.x/identicon/svg?seed=LQ" alt="lq">
+            <span>Liên Quân Mobile IOS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: CHỌN ỨNG DỤNG -->
+      <div class="form-card">
+        <div class="form-header">
+          <div class="form-title">
+            <i class="fa-solid fa-cube"></i>
+            <span>Chọn ứng dụng</span>
+          </div>
+          <button class="select-btn" onclick="toggleAppList()">
+            <span id="selectedAppText">dt00</span>
+            <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+          </button>
+        </div>
+
+        <div class="selection-grid" id="appGrid">
+          <div class="grid-item selected" onclick="selectApp('dt00', this)">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=dt00_1" alt="dt00">
+            <span>dt00</span>
+          </div>
+          <div class="grid-item" onclick="selectApp('dt00', this)">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=dt00_2" alt="dt00">
+            <span>dt00</span>
+          </div>
+          <div class="grid-item" onclick="selectApp('dt00', this)">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=dt00_3" alt="dt00">
+            <span>dt00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: CHỌN GÓI -->
+      <div class="form-card">
+        <div class="form-title" style="margin-bottom: 10px;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>CHỌN GÓI</span>
+        </div>
+        <div class="package-grid" id="packageContainer"></div>
+      </div>
+
+      <!-- STEP 4: SỐ LƯỢNG -->
+      <div class="form-card">
+        <div class="quantity-row">
+          <div class="form-title">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>SỐ LƯỢNG</span>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn" onclick="updateQty(-1)">-</button>
+            <span class="qty-val" id="qtyVal">1</span>
+            <button class="qty-btn" onclick="updateQty(1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LƯU Ý -->
+      <div class="alert-card">
+        <div class="alert-title">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>LƯU Ý QUAN TRỌNG</span>
+        </div>
+        <div class="alert-desc">
+          Sản phẩm hoạt động tốt trên adr thấp và trung bình còn adr cao có thể bị văng lỗi không vào được.
+        </div>
+      </div>
+
+      <!-- NÚT MUA -->
+      <div class="buy-action-row">
+        <div class="icon-square-btn">
+          <i class="fa-solid fa-download"></i>
+        </div>
+        <button class="btn-submit" id="buyBtn" onclick="processPurchase()">
+          <span>Mua ngay</span>
+          <small id="buySubtext">XÁC NHẬN MUA</small>
+        </button>
+      </div>
+
+      <!-- Bottom Nav -->
+      <div class="bottom-nav">
+        <button class="nav-btn active"><i class="fa-solid fa-key"></i><span>Mua Key</span></button>
+        <button class="nav-btn"><i class="fa-solid fa-wallet"></i><span>Nạp Tiền</span></button>
+        <button class="nav-btn"><i class="fa-solid fa-trophy"></i><span>Top Nạp</span></button>
+        <button class="nav-btn"><i class="fa-solid fa-wand-magic-sparkles"></i><span>VQMM</span></button>
+        <button class="nav-btn"><i class="fa-solid fa-user"></i><span>Cá Nhân</span></button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const appData = {
+      'dt00': [
+        { name: '3 Ngày', stock: 6, price: 60000, outOfStock: false },
+        { name: '7 Ngày', stock: 0, price: 0, outOfStock: true },
+        { name: '15 Ngày', stock: 67, price: 110000, outOfStock: false },
+        { name: '30 Ngày', stock: 12, price: 160000, outOfStock: false }
+      ]
+    };
+
+    let selectedGame = 'Free Fire ADR&PC';
+    let selectedApp = 'dt00';
+    let selectedPkg = null;
+    let quantity = 1;
+
+    // --- KIỂM TRA PHIÊN ĐĂNG NHẬP TỰ ĐỘNG ---
+    window.onload = async function() {
+      if (supabaseClient) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          showMainShop(session.user);
+        } else {
+          showAuthScreen();
+        }
+      }
+    };
+
+    function showAuthScreen() {
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('mainShopScreen').classList.add('hidden');
+    }
+
+    function showMainShop(user) {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainShopScreen').classList.remove('hidden');
+      
+      document.getElementById('userDisplayName').innerText = user.email.split('@')[0];
+      document.getElementById('userIdDisplay').innerText = `ID: ${user.id.substring(0, 8)}`;
+      renderPackages();
+    }
+
+    // --- CHUYỂN TAB ĐĂNG NHẬP / ĐĂNG KÝ ---
+    function switchAuthTab(tab) {
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+      const tabLoginBtn = document.getElementById('tabLoginBtn');
+      const tabSignupBtn = document.getElementById('tabSignupBtn');
+      document.getElementById('authMessage').innerText = '';
+
+      if (tab === 'login') {
+        loginForm.classList.remove('hidden');
+        signupForm.classList.add('hidden');
+        tabLoginBtn.classList.add('active');
+        tabSignupBtn.classList.remove('active');
+      } else {
+        loginForm.classList.add('hidden');
+        signupForm.classList.remove('hidden');
+        tabSignupBtn.classList.add('active');
+        tabLoginBtn.classList.remove('active');
+      }
+    }
+
+    // --- XỬ LÝ ĐĂNG NHẬP ---
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang đăng nhập...';
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else {
+        msg.className = 'auth-message success';
+        msg.innerText = 'Đăng nhập thành công!';
+        setTimeout(() => showMainShop(data.user), 500);
+      }
+    }
+
+    // --- XỬ LÝ ĐĂNG KÝ ---
+    async function handleSignup(e) {
+      e.preventDefault();
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang xử lý tạo tài khoản...';
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else {
+        msg.className = 'auth-message success';
+        msg.innerText = 'Đăng ký thành công! Vui lòng đăng nhập.';
+        switchAuthTab('login');
+      }
+    }
+
+    // --- ĐĂNG XUẤT ---
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
+      showAuthScreen();
+    }
+
+    // --- LOGIC SHOP GAME ---
+    function formatNumber(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function toggleGameList() {
+      const grid = document.getElementById('gameGrid');
+      grid.style.display = grid.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    function toggleAppList() {
+      const grid = document.getElementById('appGrid');
+      grid.style.display = grid.style.display === 'none' ? 'grid' : 'none';
+    }
+
+    function selectGame(gameName, el) {
+      selectedGame = gameName;
+      document.getElementById('selectedGameText').innerText = gameName;
+      document.querySelectorAll('#gameGrid .grid-item').forEach(item => item.classList.remove('selected'));
+      el.classList.add('selected');
+      toggleGameList();
+    }
+
+    function selectApp(appName, el) {
+      selectedApp = appName;
+      document.getElementById('selectedAppText').innerText = appName;
+      document.querySelectorAll('#appGrid .grid-item').forEach(item => item.classList.remove('selected'));
+      el.classList.add('selected');
+      toggleAppList();
+      selectedPkg = null;
+      renderPackages();
+    }
+
+    function renderPackages() {
+      const container = document.getElementById('packageContainer');
+      container.innerHTML = '';
+      const packages = appData[selectedApp] || [];
+
+      packages.forEach((pkg) => {
+        const card = document.createElement('div');
+        card.className = `pkg-card ${pkg.outOfStock ? 'out-of-stock' : ''}`;
+        
+        if (pkg.outOfStock) {
+          card.innerHTML = `
+            <div class="pkg-name">${pkg.name}</div>
+            <div class="pkg-stock" style="color: #ef4444;">/ Hết hàng</div>
+            <div class="badge-out">HẾT HÀNG</div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div class="pkg-name">${pkg.name}</div>
+            <div class="pkg-stock">📦 Kho: <span>${pkg.stock}</span></div>
+            <div class="pkg-price">${formatNumber(pkg.price)}đ</div>
+          `;
+          card.onclick = () => choosePackage(pkg, card);
+        }
+
+        container.appendChild(card);
+      });
+
+      updateBuyButton();
+    }
+
+    function choosePackage(pkg, cardEl) {
+      document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
+      cardEl.classList.add('selected');
+      selectedPkg = pkg;
+      updateBuyButton();
+    }
+
+    function updateQty(change) {
+      quantity = Math.max(1, quantity + change);
+      document.getElementById('qtyVal').innerText = quantity;
+    }
+
+    function updateBuyButton() {
+      const btn = document.getElementById('buyBtn');
+      const subtext = document.getElementById('buySubtext');
+
+      if (!selectedPkg) {
+        btn.classList.add('disabled');
+        subtext.innerText = 'CHƯA CHỌN GÓI';
+      } else {
+        btn.classList.remove('disabled');
+        subtext.innerText = 'XÁC NHẬN MUA';
+      }
+    }
+
+    function processPurchase() {
+      if (!selectedPkg) {
+        alert('Vui lòng chọn gói dịch vụ trước!');
+        return;
+      }
+      alert(`Đã đặt mua thành công ${quantity}x gói ${selectedPkg.name} thuộc ứng dụng ${selectedApp}!`);
+    }
+  </script>
+</body>
+</html>
