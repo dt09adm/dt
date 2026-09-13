@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - dt09</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { --bg: #060814; --card: #111428; --accent: #8b5cf6; --text: #fff; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; padding: 20px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 480px; }
+    h2 { color: var(--accent); margin-bottom: 20px; text-align: center; }
+    .card { background: var(--card); border: 1px solid #1d2242; border-radius: 14px; padding: 16px; margin-bottom: 20px; }
+    .card h3 { font-size: 15px; margin-bottom: 12px; color: #f97316; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    label { font-size: 12px; color: #808aab; }
+    input, select, textarea { background: #151833; border: 1px solid #23284c; border-radius: 8px; padding: 10px; color: white; outline: none; font-size: 14px; }
+    button { background: var(--accent); border: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 6px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>QUẢN TRỊ VIÊN (ADMIN)</h2>
+
+    <!-- CỘNG TIỀN CHO USER -->
+    <div class="card">
+      <h3>1. Cộng tiền vào tài khoản</h3>
+      <div class="form-group">
+        <label>Nhập Mã ID (Ví dụ: f2d298d0) hoặc Email:</label>
+        <input type="text" id="targetUser" placeholder="f2d298d0 hoặc duytoanvp2009@gmail.com">
+      </div>
+      <div class="form-group">
+        <label>Số tiền cần cộng (VND):</label>
+        <input type="number" id="addBalanceAmount" placeholder="Ví dụ: 50000">
+      </div>
+      <button id="btnBalance" onclick="addBalance()">XÁC NHẬN CỘNG TIỀN</button>
+    </div>
+
+    <!-- THÊM KEY VÀO KHO -->
+    <div class="card">
+      <h3>2. Thêm Key Game Mới</h3>
+      <div class="form-group">
+        <label>Chọn Game:</label>
+        <select id="keyGame">
+          <option value="Free Fire ADR&PC">Free Fire ADR&PC</option>
+          <option value="Free Fire IOS">Free Fire IOS</option>
+          <option value="PUBG IOS">PUBG IOS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tên App:</label>
+        <input type="text" id="keyApp" value="dt00">
+      </div>
+      <div class="form-group">
+        <label>Gói cước:</label>
+        <select id="keyPackage">
+          <option value="3 Ngày">3 Ngày</option>
+          <option value="7 Ngày">7 Ngày</option>
+          <option value="15 Ngày">15 Ngày</option>
+          <option value="30 Ngày">30 Ngày</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Mã Key (mỗi mã 1 dòng):</label>
+        <textarea id="keyCodes" style="height:80px;"></textarea>
+      </div>
+      <button id="btnKey" onclick="uploadKeys()" style="background: #10b981;">THÊM KEY VÀO KHO</button>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    async function addBalance() {
+      const userInput = document.getElementById('targetUser').value.trim();
+      const amount = parseFloat(document.getElementById('addBalanceAmount').value);
+      const btn = document.getElementById('btnBalance');
+
+      if (!userInput || isNaN(amount)) {
+        alert('Vui lòng nhập ID/Email và Số tiền hợp lệ!');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Đang xử lý...';
+
+      try {
+        // Tìm user theo ID rút gọn hoặc Email
+        let { data, error } = await supabaseClient
+          .from('profiles')
+          .select('id, balance, email')
+          .or(`id.ilike.${userInput}%,email.ilike.${userInput}`);
+
+        if (error || !data || data.length === 0) {
+          alert('Không tìm thấy tài khoản với ID/Email này!');
+          btn.disabled = false;
+          btn.innerText = 'XÁC NHẬN CỘNG TIỀN';
+          return;
+        }
+
+        const user = data[0];
+        const newBalance = (Number(user.balance) || 0) + amount;
+
+        // Cập nhật số dư mới
+        const { error: updateErr } = await supabaseClient
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', user.id);
+
+        if (updateErr) {
+          alert('Lỗi cộng tiền: ' + updateErr.message);
+        } else {
+          alert(`Thành công! Đã cộng ${amount.toLocaleString()}đ cho tài khoản ${user.email}.\nSố dư mới: ${newBalance.toLocaleString()}đ`);
+          document.getElementById('addBalanceAmount').value = '';
+        }
+      } catch (e) {
+        alert('Đã xảy ra lỗi kết nối: ' + e.message);
+      }
+
+      btn.disabled = false;
+      btn.innerText = 'XÁC NHẬN CỘNG TIỀN';
+    }
+
+    async function uploadKeys() {
+      const game = document.getElementById('keyGame').value;
+      const app = document.getElementById('keyApp').value;
+      const pkg = document.getElementById('keyPackage').value;
+      const rawKeys = document.getElementById('keyCodes').value.trim().split('\n');
+      const btn = document.getElementById('btnKey');
+
+      const keysToInsert = rawKeys.filter(k => k.trim() !== '').map(code => ({
+        game_name: game,
+        app_name: app,
+        package_name: pkg,
+        key_code: code.trim()
+      }));
+
+      if (keysToInsert.length === 0) return alert('Vui lòng nhập ít nhất 1 mã Key!');
+
+      btn.disabled = true;
+      btn.innerText = 'Đang tải lên...';
+
+      const { error } = await supabaseClient.from('keys_store').insert(keysToInsert);
+      if (error) {
+        alert('Lỗi thêm key (Có thể mã key đã tồn tại): ' + error.message);
+      } else {
+        alert(`Đã thêm thành công ${keysToInsert.length} Key vào kho!`);
+        document.getElementById('keyCodes').value = '';
+      }
+
+      btn.disabled = false;
+      btn.innerText = 'THÊM KEY VÀO KHO';
+    }
+  </script>
+</body>
+</html>
