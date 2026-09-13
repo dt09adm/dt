@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Shop Hkhai07 - Auto 24/7</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-main: #070913;
+      --card-bg: #111428;
+      --card-border: #1d2242;
+      --accent-purple: #8b5cf6;
+      --accent-orange: #f97316;
+      --text-main: #ffffff;
+      --text-muted: #808aab;
+      --danger-red: #ef4444;
+      --success-green: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+    body { background-color: #020307; color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: radial-gradient(circle at top, #141733 0%, #060814 80%);
+      position: relative;
+      padding-bottom: 80px;
+      min-height: 100vh;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    .hidden { display: none !important; }
+
+    /* AUTH SCREEN */
+    .auth-overlay { padding: 30px 20px; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; }
+    .auth-header { text-align: center; margin-bottom: 24px; }
+    .auth-header h2 { font-size: 24px; color: var(--accent-purple); margin-bottom: 6px; }
+    .auth-header p { font-size: 13px; color: var(--text-muted); }
+    .auth-tabs { display: flex; background: #111428; border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 20px; padding: 4px; }
+    .auth-tab { flex: 1; padding: 10px; border: none; background: none; color: var(--text-muted); font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 8px; }
+    .auth-tab.active { background: var(--accent-purple); color: white; }
+    .auth-form { display: flex; flex-direction: column; gap: 14px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 12px; color: var(--text-muted); }
+    .input-group input { background: #151833; border: 1px solid #23284c; border-radius: 10px; padding: 12px; color: white; font-size: 14px; outline: none; }
+    .btn-auth { background: linear-gradient(135deg, var(--accent-purple), #6d28d9); border: none; color: white; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; margin-top: 10px; }
+    .auth-message { font-size: 12px; text-align: center; margin-top: 10px; min-height: 18px; }
+    .auth-message.error { color: var(--danger-red); }
+    .auth-message.success { color: var(--success-green); }
+
+    /* STICKY HEADER */
+    .profile-header { position: sticky; top: 0; z-index: 99; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(18, 17, 39, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 14px; }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 42px; height: 42px; border-radius: 50%; background: #3b82f6; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.15); }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-details .name { font-size: 13px; font-weight: 700; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-details .id { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .balance-pill { background: #141622; border: 1px solid #3d3113; color: #eab308; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 13px; }
+
+    /* BANNER */
+    .banner-card { background: linear-gradient(135deg, #1d1b3c 0%, #12152e 100%); border: 1px solid var(--card-border); border-radius: 18px; margin: 0 14px 14px 14px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+    .banner-icon { width: 46px; height: 46px; background: #a855f7; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+    .banner-text h3 { font-size: 17px; font-weight: 800; }
+    .banner-text p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* CARDS */
+    .form-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 14px; margin: 0 14px 12px 14px; }
+    .form-header { display: flex; justify-content: space-between; align-items: center; }
+    .form-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-title i { color: var(--accent-purple); background: rgba(139, 92, 246, 0.15); padding: 6px; border-radius: 8px; }
+    .select-btn { background: #191d38; border: 1px solid #2d345e; color: white; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+    /* PACKAGE GRID */
+    .package-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .pkg-card { background: #151833; border: 1px solid #23284c; border-radius: 14px; padding: 14px 10px; text-align: center; cursor: pointer; position: relative; }
+    .pkg-card.selected { border-color: #38bdf8; background: rgba(56, 189, 248, 0.08); box-shadow: 0 0 12px rgba(56, 189, 248, 0.2); }
+    .pkg-card.out-of-stock { border-color: #451a22; background: rgba(239, 68, 68, 0.05); cursor: not-allowed; }
+    .pkg-name { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+    .pkg-stock { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .pkg-stock span { color: #4ade80; font-weight: bold; }
+    .pkg-price { font-size: 14px; font-weight: 800; color: #f97316; }
+
+    .buy-action-row { display: flex; gap: 10px; margin: 0 14px 14px 14px; }
+    .icon-square-btn { width: 48px; height: 48px; background: #151833; border: 1px solid #23284c; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; cursor: pointer; }
+    .btn-submit { flex: 1; height: 48px; border-radius: 12px; border: none; background: linear-gradient(135deg, #f97316, #ea580c); color: white; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
+
+    /* DEPOSIT SECTION */
+    .balance-summary-card { background: #10142b; border: 1px solid #1e244d; border-radius: 16px; padding: 16px; margin: 0 14px 12px 14px; position: relative; }
+    .balance-summary-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; }
+    .balance-val-big { font-size: 26px; font-weight: 800; color: white; margin-bottom: 14px; }
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { background: #161b3b; border: 1px solid #232a5c; border-radius: 12px; padding: 10px 12px; }
+    .stat-box label { font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px; }
+    .stat-box span { font-size: 13px; font-weight: 800; }
+
+    .method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 14px 12px 14px; }
+    .method-card { background: #10142b; border: 1px solid #1e244d; border-radius: 14px; padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative; }
+    .method-card.active { border-color: var(--accent-purple); background: rgba(139, 92, 246, 0.1); }
+    .method-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(139, 92, 246, 0.2); display: flex; align-items: center; justify-content: center; color: var(--accent-purple); }
+    .method-info h4 { font-size: 12px; font-weight: 700; }
+    .method-info p { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .method-radio { position: absolute; right: 10px; top: 10px; width: 14px; height: 14px; border-radius: 50%; border: 1px solid #4a5578; display: flex; align-items: center; justify-content: center; }
+    .method-card.active .method-radio::after { content: ''; width: 8px; height: 8px; background: var(--accent-purple); border-radius: 50%; }
+
+    .amount-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .amount-btn { background: #161b3b; border: 1px solid #232a5c; border-radius: 10px; padding: 12px 6px; text-align: center; font-size: 13px; font-weight: 800; cursor: pointer; }
+    .amount-btn.active { border-color: var(--accent-orange); color: #f97316; background: rgba(249, 115, 22, 0.1); }
+
+    .custom-input-box { background: #161b3b; border: 1px solid #232a5c; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    .custom-input-box input { background: none; border: none; outline: none; color: white; font-weight: 700; font-size: 13px; width: 80%; }
+
+    .btn-create-qr { width: calc(100% - 28px); margin: 0 14px 14px 14px; height: 48px; border-radius: 12px; border: none; background: linear-gradient(135deg, #f97316, #ea580c); color: white; font-weight: 800; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
+
+    .notice-card { background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(10, 148, 102, 0.3); border-radius: 12px; padding: 10px 12px; margin: 0 14px 16px 14px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a7f3d0; }
+
+    /* HISTORY LIST */
+    .section-divider { text-align: center; border-bottom: 1px solid #1a1e3b; line-height: 0.1em; margin: 16px 14px 14px 14px; }
+    .section-divider span { background: #060814; padding: 0 10px; font-size: 10px; color: var(--text-muted); font-weight: 800; letter-spacing: 1px; }
+
+    .sub-tabs { display: flex; margin: 0 14px 12px 14px; gap: 8px; }
+    .sub-tab { flex: 1; padding: 8px; border-radius: 10px; background: #10142b; border: 1px solid #1e244d; color: var(--text-muted); font-size: 12px; font-weight: 700; text-align: center; cursor: pointer; }
+    .sub-tab.active { background: #1d2147; border-color: var(--accent-purple); color: white; }
+
+    .history-card { background: #10142b; border: 1px solid #1e244d; border-radius: 12px; padding: 12px; margin: 0 14px 8px 14px; display: flex; justify-content: space-between; align-items: center; }
+    .history-left { display: flex; align-items: center; gap: 10px; }
+    .history-icon { width: 34px; height: 34px; border-radius: 50%; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); display: flex; align-items: center; justify-content: center; color: #eab308; font-size: 12px; }
+    .history-info h5 { font-size: 12px; font-weight: 700; }
+    .history-info p { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .history-right { text-align: right; }
+    .history-amount { font-size: 13px; font-weight: 800; color: #f97316; }
+    .history-badge { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: rgba(234, 179, 8, 0.15); color: #eab308; display: inline-block; margin-top: 2px; }
+
+    /* MODAL POPUP QR */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); z-index: 1000; display: flex; justify-content: center; align-items: flex-end; }
+    .modal-content { width: 100%; max-width: 480px; background: #0c0e1e; border-radius: 20px 20px 0 0; padding: 20px 16px 24px 16px; border-top: 1px solid #23284c; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .modal-header-line { width: 40px; height: 4px; background: #2a315c; border-radius: 2px; margin: 0 auto 16px auto; }
+    .modal-title { font-size: 14px; font-weight: 700; color: white; display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+
+    .payment-box { background: #131733; border: 1px solid #212754; border-radius: 14px; padding: 14px; margin-bottom: 12px; text-align: center; }
+    .pay-title { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+    .pay-amount { font-size: 24px; font-weight: 800; color: #f97316; margin: 4px 0 12px 0; }
+
+    .memo-card { background: #191e42; border: 1px solid #2c346b; border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .memo-card code { font-size: 15px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
+    .btn-copy { background: #8b5cf6; border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+    .qr-container { background: #131733; border: 1px solid #212754; border-radius: 14px; padding: 16px; text-align: center; margin-bottom: 12px; }
+    .qr-bank-tag { display: inline-flex; align-items: center; gap: 6px; background: #1e2552; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; margin-bottom: 12px; }
+    .qr-img-wrap { background: white; padding: 12px; border-radius: 12px; display: inline-block; width: 220px; height: 220px; }
+    .qr-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+
+    .account-details { background: #131733; border: 1px solid #212754; border-radius: 12px; padding: 12px; font-size: 12px; margin-bottom: 12px; }
+    .acc-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .acc-row label { color: var(--text-muted); }
+    .acc-row span { font-weight: 700; }
+
+    .waiting-alert { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; font-size: 11px; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; font-weight: 600; }
+    .btn-close-modal { width: 100%; padding: 12px; border-radius: 12px; border: none; background: #1f254a; color: white; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 60px; background: #060814; border-top: 1px solid #16182e; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+    .nav-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; cursor: pointer; width: 20%; }
+    .nav-btn.active { color: var(--accent-purple); font-weight: bold; }
+    .nav-btn i { font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- AUTH SCREEN -->
+    <div id="authScreen" class="auth-overlay">
+      <div class="auth-header">
+        <h2>Shop Hkhai07</h2>
+        <p>Hệ thống bán Key Game Auto 24/7</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">Đăng nhập</button>
+        <button class="auth-tab" id="tabSignupBtn" onclick="switchAuthTab('signup')">Đăng ký</button>
+      </div>
+
+      <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="nhap@email.com" required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-auth">ĐĂNG NHẬP</button>
+      </form>
+
+      <form id="signupForm" class="auth-form hidden" onsubmit="handleSignup(event)">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="nhap@email.com" required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="signupPassword" placeholder="Tối thiểu 6 ký tự" required>
+        </div>
+        <button type="submit" class="btn-auth">TẠO TÀI KHOẢN</button>
+      </form>
+
+      <div id="authMessage" class="auth-message"></div>
+    </div>
+
+
+    <!-- MAIN SHOP SCREEN -->
+    <div id="mainShopScreen" class="hidden">
+      <!-- Sticky Header -->
+      <div class="profile-header">
+        <div class="user-info">
+          <div class="user-avatar">
+            <img id="userAvatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Shop" alt="avatar">
+          </div>
+          <div class="user-details">
+            <div class="name" id="userDisplayName">Đang tải...</div>
+            <div class="id" id="userIdDisplay">ID: ---</div>
+          </div>
+        </div>
+        <div class="balance-pill"><span id="userBalance">0</span>đ</div>
+      </div>
+
+      <!-- TAB 1: MUA KEY -->
+      <div id="tab-buy" class="tab-content">
+        <div class="banner-card">
+          <div class="banner-icon"><i class="fa-solid fa-key"></i></div>
+          <div class="banner-text">
+            <h3>Hkhai07</h3>
+            <p>Hệ thống tự động cấp Key 24/7</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-title"><i class="fa-solid fa-gamepad"></i><span>Chọn mục game</span></div>
+            <button class="select-btn"><span>Free Fire ADR&PC</span><i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i></button>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title" style="margin-bottom: 10px;"><i class="fa-solid fa-wand-magic-sparkles"></i><span>CHỌN GÓI</span></div>
+          <div class="package-grid">
+            <div class="pkg-card selected" onclick="selectPackage(60000, this)">
+              <div class="pkg-name">3 Ngày</div>
+              <div class="pkg-stock">📦 Kho: <span>Phục vụ 24/7</span></div>
+              <div class="pkg-price">60.000đ</div>
+            </div>
+            <div class="pkg-card" onclick="selectPackage(120000, this)">
+              <div class="pkg-name">7 Ngày</div>
+              <div class="pkg-stock">📦 Kho: <span>Phục vụ 24/7</span></div>
+              <div class="pkg-price">120.000đ</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buy-action-row">
+          <div class="icon-square-btn"><i class="fa-solid fa-download"></i></div>
+          <button class="btn-submit" onclick="handleBuyKey()"><span>Mua ngay</span><small>XÁC NHẬN MUA</small></button>
+        </div>
+      </div>
+
+      <!-- TAB 2: NẠP TIỀN STANDARD -->
+      <div id="tab-deposit" class="tab-content hidden">
+        <div class="balance-summary-card">
+          <div class="balance-summary-header">
+            <span><i class="fa-solid fa-wallet" style="margin-right: 6px;"></i>SỐ DƯ KHẢ DỤNG</span>
+            <span style="color: #10b981;">● Tự động 24/7</span>
+          </div>
+          <div class="balance-val-big" id="depositPageBalance">0đ</div>
+          <div class="stats-row">
+            <div class="stat-box">
+              <label>TỔNG CHI TIÊU</label>
+              <span id="totalSpentText">0đ</span>
+            </div>
+            <div class="stat-box">
+              <label>ĐƠN HÀNG MUA</label>
+              <span id="totalOrdersText">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="method-grid">
+          <div class="method-card active" onclick="selectDepositMethod('qr', this)">
+            <div class="method-icon"><i class="fa-solid fa-qrcode"></i></div>
+            <div class="method-info">
+              <h4>Chuyển khoản QR</h4>
+              <p>VietQR Tự động 24/7</p>
+            </div>
+            <div class="method-radio"></div>
+          </div>
+          <div class="method-card" onclick="selectDepositMethod('card', this)">
+            <div class="method-icon" style="color:#f97316; background:rgba(249,115,22,0.15);"><i class="fa-solid fa-mobile-screen"></i></div>
+            <div class="method-info">
+              <h4>Thẻ cào</h4>
+              <p>Viettel - Mobi - Vina</p>
+            </div>
+            <div class="method-radio"></div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title"><i class="fa-solid fa-coins"></i><span>CHỌN HOẶC NHẬP SỐ TIỀN</span></div>
+          <div class="amount-grid">
+            <div class="amount-btn active" onclick="selectAmount(10000, this)">10.000đ</div>
+            <div class="amount-btn" onclick="selectAmount(20000, this)">20.000đ</div>
+            <div class="amount-btn" onclick="selectAmount(50000, this)">50.000đ</div>
+            <div class="amount-btn" onclick="selectAmount(100000, this)">100.000đ</div>
+            <div class="amount-btn" onclick="selectAmount(200000, this)">200.000đ</div>
+            <div class="amount-btn" onclick="selectAmount(500000, this)">500.000đ</div>
+          </div>
+          <div class="custom-input-box">
+            <input type="number" id="customAmountInput" placeholder="Số tiền khác (tối thiểu 10.000đ)" oninput="onCustomAmountInput()">
+            <span style="font-size: 11px; font-weight: 800; color: #f97316;">VNĐ</span>
+          </div>
+        </div>
+
+        <button class="btn-create-qr" onclick="openQrModal()">
+          <i class="fa-solid fa-qrcode"></i>
+          <span>TẠO MÃ QR NẠP TIỀN</span>
+        </button>
+
+        <div class="notice-card">
+          <i class="fa-solid fa-shield-halved" style="color:#10b981; font-size: 14px;"></i>
+          <span>Hệ thống VietQR đối soát tự động — Tiền vào ví tức thì sau 3–5 giây.</span>
+        </div>
+
+        <div class="section-divider"><span>LỊCH SỬ HOẠT ĐỘNG</span></div>
+
+        <div class="sub-tabs">
+          <div class="sub-tab active" onclick="switchSubTab('deposit', this)"><i class="fa-solid fa-rotate-left" style="margin-right: 4px;"></i>Lịch sử nạp</div>
+          <div class="sub-tab" onclick="switchSubTab('wallet', this)"><i class="fa-solid fa-wallet" style="margin-right: 4px;"></i>Giao dịch ví</div>
+        </div>
+
+        <div id="historyList"></div>
+      </div>
+
+      <!-- TAB 3: TOP NẠP -->
+      <div id="tab-top" class="tab-content hidden">
+        <div class="form-card">
+          <div class="form-title" style="margin-bottom: 12px;"><i class="fa-solid fa-trophy"></i><span>TOP NẠP THÁNG</span></div>
+          <p style="font-size: 13px; color: var(--text-muted);">Bảng xếp hạng đang cập nhật...</p>
+        </div>
+      </div>
+
+      <!-- TAB 4: VÒNG QUAY MAY MẮN -->
+      <div id="tab-wheel" class="tab-content hidden">
+        <div class="form-card" style="text-align: center;">
+          <div class="form-title" style="justify-content: center;"><i class="fa-solid fa-wand-magic-sparkles"></i><span>VÒNG QUAY MAY MẮN</span></div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">Tính năng quay thưởng tự động 24/7</p>
+        </div>
+      </div>
+
+      <!-- TAB 5: TRANG CÁ NHÂN -->
+      <div id="tab-account" class="tab-content hidden">
+        <div class="form-card">
+          <div class="form-title" style="margin-bottom: 12px;"><i class="fa-solid fa-user"></i><span>CÁ NHÂN</span></div>
+          <button class="btn-auth" style="background: #ef4444;" onclick="handleLogout()">ĐĂNG XUẤT</button>
+        </div>
+      </div>
+
+      <!-- Bottom Nav Bar -->
+      <div class="bottom-nav">
+        <button class="nav-btn active" onclick="switchNavTab('buy', this)"><i class="fa-solid fa-key"></i><span>Mua Key</span></button>
+        <button class="nav-btn" onclick="switchNavTab('deposit', this)"><i class="fa-solid fa-wallet"></i><span>Nạp Tiền</span></button>
+        <button class="nav-btn" onclick="switchNavTab('top', this)"><i class="fa-solid fa-trophy"></i><span>Top Nạp</span></button>
+        <button class="nav-btn" onclick="switchNavTab('wheel', this)"><i class="fa-solid fa-wand-magic-sparkles"></i><span>VQMM</span></button>
+        <button class="nav-btn" onclick="switchNavTab('account', this)"><i class="fa-solid fa-user"></i><span>Cá Nhân</span></button>
+      </div>
+    </div>
+
+    <!-- MODAL POPUP HIỂN THỊ VIETQR -->
+    <div id="qrModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header-line"></div>
+        <div class="modal-title"><i class="fa-solid fa-receipt" style="color:var(--accent-purple);"></i><span>Thông tin nạp tiền</span></div>
+
+        <div class="payment-box">
+          <div class="pay-title">SỐ TIỀN THANH TOÁN</div>
+          <div class="pay-amount" id="modalPayAmount">0đ</div>
+
+          <div style="font-size: 11px; color: var(--text-muted); text-align: left; margin-bottom: 4px;">
+            <i class="fa-solid fa-key" style="color: var(--accent-purple);"></i> <strong>NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC)</strong> 
+            <span style="background: #ef4444; color: white; padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 800;">QUAN TRỌNG</span>
+          </div>
+
+          <div class="memo-card">
+            <code id="modalMemoText">---</code>
+            <button class="btn-copy" onclick="copyMemo()"><i class="fa-regular fa-copy"></i> Sao chép</button>
+          </div>
+
+          <p style="font-size: 10px; color: #f59e0b; text-align: left;">
+            ⚡ Phải điền chính xác nội dung <strong id="modalMemoHighlight">---</strong> để hệ thống tự động duyệt tiền!
+          </p>
+        </div>
+
+        <div class="qr-container">
+          <div class="qr-bank-tag"><span style="color:#38bdf8;">MB</span> MBBank</div>
+          <div>
+            <div class="qr-img-wrap">
+              <img id="qrImageEl" src="" alt="VietQR Code">
+            </div>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;"><i class="fa-solid fa-expand" style="margin-right: 4px;"></i>Quét mã QR bằng ứng dụng ngân hàng bất kỳ</p>
+        </div>
+
+        <div class="account-details">
+          <div class="acc-row">
+            <label>Chủ tài khoản</label>
+            <span style="color: white;">HUYNH THI BICH LAN</span>
+          </div>
+          <div class="acc-row" style="margin-top: 8px;">
+            <label>Số tài khoản</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: white; font-weight: 800; font-size: 13px;">0345042406</span>
+              <button onclick="copyAccNumber()" style="background: #1e2552; border: 1px solid #3b4680; color: #38bdf8; padding: 2px 8px; border-radius: 6px; font-size: 10px; cursor: pointer;"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="waiting-alert">
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <span>Hệ thống đang chờ chuyển khoản... Tiền vào ví sau 3–5 giây.</span>
+        </div>
+
+        <button class="btn-close-modal" onclick="closeQrModal()">Đóng</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    let currentUser = null;
+    let userProfile = { balance: 0, total_spent: 0, total_orders: 0 };
+    let selectedDepositAmount = 10000;
+    let selectedPackagePrice = 60000;
+    let currentMemo = '';
+
+    window.onload = async function() {
+      if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+          await loadUserProfile();
+          showMainShop();
+        } else {
+          showAuthScreen();
+        }
+      }
+    };
+
+    async function loadUserProfile() {
+      if (!currentUser) return;
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (data) {
+        userProfile = data;
+        updateUIProfile();
+      }
+    }
+
+    function updateUIProfile() {
+      const emailName = currentUser.email ? currentUser.email.split('@')[0] : 'User';
+      const shortId = currentUser.id ? currentUser.id.substring(0, 8).toUpperCase() : '000000';
+
+      document.getElementById('userDisplayName').innerText = emailName;
+      document.getElementById('userIdDisplay').innerText = `ID: ${shortId}`;
+      document.getElementById('userAvatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${emailName}`;
+      
+      const formattedBalance = formatNumber(userProfile.balance || 0);
+      document.getElementById('userBalance').innerText = formattedBalance;
+      document.getElementById('depositPageBalance').innerText = `${formattedBalance}đ`;
+      document.getElementById('totalSpentText').innerText = `${formatNumber(userProfile.total_spent || 0)}đ`;
+      document.getElementById('totalOrdersText').innerText = userProfile.total_orders || 0;
+    }
+
+    function formatNumber(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function showAuthScreen() {
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('mainShopScreen').classList.add('hidden');
+    }
+
+    function showMainShop() {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainShopScreen').classList.remove('hidden');
+      loadDepositHistory();
+    }
+
+    // AUTH HANDLERS
+    function switchAuthTab(tab) {
+      document.getElementById('authMessage').innerText = '';
+      if (tab === 'login') {
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('signupForm').classList.add('hidden');
+        document.getElementById('tabLoginBtn').classList.add('active');
+        document.getElementById('tabSignupBtn').classList.remove('active');
+      } else {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('signupForm').classList.remove('hidden');
+        document.getElementById('tabSignupBtn').classList.add('active');
+        document.getElementById('tabLoginBtn').classList.remove('active');
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang đăng nhập...';
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else {
+        msg.className = 'auth-message success';
+        msg.innerText = 'Đăng nhập thành công!';
+        currentUser = data.user;
+        await loadUserProfile();
+        setTimeout(() => showMainShop(), 500);
+      }
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault();
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang đăng ký...';
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else {
+        msg.className = 'auth-message success';
+        msg.innerText = 'Đăng ký thành công! Vui lòng đăng nhập.';
+        switchAuthTab('login');
+      }
+    }
+
+    async function handleLogout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      showAuthScreen();
+    }
+
+    // NAV TAB
+    function switchNavTab(tabName, btnEl) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      btnEl.classList.add('active');
+    }
+
+    function selectPackage(price, el) {
+      selectedPackagePrice = price;
+      document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    async function handleBuyKey() {
+      if (userProfile.balance < selectedPackagePrice) {
+        alert('Số dư không đủ! Vui lòng nạp thêm tiền.');
+        switchNavTab('deposit', document.querySelectorAll('.nav-btn')[1]);
+        return;
+      }
+
+      const newBalance = userProfile.balance - selectedPackagePrice;
+      const newSpent = (userProfile.total_spent || 0) + selectedPackagePrice;
+      const newOrders = (userProfile.total_orders || 0) + 1;
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ balance: newBalance, total_spent: newSpent, total_orders: newOrders })
+        .eq('id', currentUser.id);
+
+      if (!error) {
+        userProfile.balance = newBalance;
+        userProfile.total_spent = newSpent;
+        userProfile.total_orders = newOrders;
+        updateUIProfile();
+        
+        const randomKey = 'HKHAI-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        alert(`Mua key thành công!\nMã Key của bạn: ${randomKey}`);
+      } else {
+        alert('Có lỗi xảy ra: ' + error.message);
+      }
+    }
+
+    // DEPOSIT METHOD
+    function selectDepositMethod(type, el) {
+      document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function selectAmount(amt, el) {
+      selectedDepositAmount = amt;
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('customAmountInput').value = '';
+    }
+
+    function onCustomAmountInput() {
+      const val = parseInt(document.getElementById('customAmountInput').value);
+      if (val) {
+        selectedDepositAmount = val;
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      }
+    }
+
+    function generateRandomMemo() {
+      const chars = '0123456789ABCDEF';
+      let code = 'NAP';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    async function openQrModal() {
+      if (selectedDepositAmount < 10000) {
+        alert('Số tiền nạp tối thiểu là 10.000đ!');
+        return;
+      }
+
+      currentMemo = generateRandomMemo();
+      const bankId = 'MB';
+      const accountNo = '0345042406';
+      const accountName = 'HUYNH THI BICH LAN';
+
+      const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${selectedDepositAmount}&addInfo=${currentMemo}&accountName=${encodeURIComponent(accountName)}`;
+
+      document.getElementById('modalPayAmount').innerText = `${formatNumber(selectedDepositAmount)}đ`;
+      document.getElementById('modalMemoText').innerText = currentMemo;
+      document.getElementById('modalMemoHighlight').innerText = currentMemo;
+      document.getElementById('qrImageEl').src = qrUrl;
+
+      // Lưu đơn nạp vào Supabase
+      await supabaseClient.from('deposits').insert({
+        user_id: currentUser.id,
+        trans_id: currentMemo,
+        amount: selectedDepositAmount,
+        status: 'PENDING'
+      });
+
+      await loadDepositHistory();
+      document.getElementById('qrModal').classList.remove('hidden');
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    function copyMemo() {
+      navigator.clipboard.writeText(currentMemo);
+      alert('Đã sao chép nội dung chuyển khoản!');
+    }
+
+    function copyAccNumber() {
+      navigator.clipboard.writeText('0345042406');
+      alert('Đã sao chép số tài khoản!');
+    }
+
+    async function loadDepositHistory() {
+      if (!currentUser) return;
+      const { data } = await supabaseClient
+        .from('deposits')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      const listEl = document.getElementById('historyList');
+      listEl.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        listEl.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-muted); padding:10px;">Chưa có lịch sử nạp tiền</p>`;
+        return;
+      }
+
+      data.forEach(item => {
+        const timeStr = new Date(item.created_at).toLocaleString('vi-VN');
+        listEl.innerHTML += `
+          <div class="history-card">
+            <div class="history-left">
+              <div class="history-icon"><i class="fa-regular fa-clock"></i></div>
+              <div class="history-info">
+                <h5>Chuyển khoản VietQR</h5>
+                <p>${item.trans_id} • ${timeStr}</p>
+              </div>
+            </div>
+            <div class="history-right">
+              <div class="history-amount">+${formatNumber(item.amount)}đ</div>
+              <div class="history-badge" style="${item.status === 'SUCCESS' ? 'background:rgba(16,185,129,0.15); color:#10b981;' : ''}">${item.status === 'PENDING' ? 'CHỜ DUYỆT' : 'THÀNH CÔNG'}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function switchSubTab(type, el) {
+      document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>
