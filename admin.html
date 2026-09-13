@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dt09 - Admin Control Panel</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cyberDark: '#060814',
+            cyberCard: '#111428',
+            cyberBorder: '#1d2242',
+            accentPurple: '#8b5cf6',
+            accentOrange: '#f97316',
+            successGreen: '#10b981',
+            dangerRed: '#ef4444'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #060814; }
+    ::-webkit-scrollbar-thumb { background: #1d2242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
+
+    /* Glassmorphism */
+    .glass-panel {
+      background: rgba(17, 20, 40, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+    .glass-panel-glow {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+    }
+
+    /* Pulse Glow */
+    .glow-purple { box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
+    .glow-orange { box-shadow: 0 0 15px rgba(249, 115, 22, 0.3); }
+    .glow-green { box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+
+    /* Modal Animation */
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-modal { animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  </style>
+</head>
+<body class="bg-cyberDark text-white font-sans min-h-screen flex flex-col md:flex-row antialiased">
+
+  <header class="md:hidden flex items-center justify-between p-4 bg-cyberCard border-b border-cyberBorder sticky top-0 z-40">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-accentPurple to-indigo-600 flex items-center justify-center font-black text-lg shadow-lg">
+        dt
+      </div>
+      <div>
+        <h1 class="font-extrabold text-base tracking-wide text-white">dt09 ADMIN</h1>
+        <p class="text-xs text-slate-400">Control & Management Panel</p>
+      </div>
+    </div>
+    <button id="mobileMenuBtn" class="p-2 text-slate-300 hover:text-white text-xl">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+  </header>
+
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-cyberCard/95 border-r border-cyberBorder p-5 flex flex-col justify-between transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out glass-panel">
+    <div>
+      <div class="hidden md:flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accentPurple to-indigo-600 flex items-center justify-center font-black text-xl glow-purple">
+          dt
+        </div>
+        <div>
+          <h1 class="font-black text-lg tracking-wider text-white">dt09 ADMIN</h1>
+          <span class="inline-block px-2 py-0.5 text-[10px] font-bold bg-accentPurple/20 text-accentPurple rounded-full border border-accentPurple/30">
+            v2.0 PRO
+          </span>
+        </div>
+      </div>
+
+      <nav class="space-y-2">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-accentPurple bg-accentPurple/10 border border-accentPurple/30 transition-all">
+          <i class="fa-solid fa-chart-pie w-5"></i> Tổng Quan
+        </button>
+        <button onclick="switchTab('users')" id="nav-users" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
+          <i class="fa-solid fa-users w-5"></i> Quản Lý Quỹ Số Dư
+        </button>
+        <button onclick="switchTab('keys')" id="nav-keys" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
+          <i class="fa-solid fa-key w-5"></i> Quản Lý Kho Key
+        </button>
+      </nav>
+    </div>
+
+    <!-- System Status Footer -->
+    <div class="pt-4 border-t border-cyberBorder/60">
+      <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+        <span>Chế độ hệ thống:</span>
+        <span id="systemModeBadge" class="text-accentOrange font-semibold">Giả Lập (Mock)</span>
+      </div>
+      <button onclick="toggleSupabaseMode()" class="w-full py-2 px-3 text-xs bg-cyberBorder hover:bg-slate-700/60 rounded-lg text-slate-300 font-semibold flex items-center justify-center gap-2 transition-all">
+        <i class="fa-solid fa-arrows-rotate"></i> Chuyển đổi Supabase Real
+      </button>
+    </div>
+  </aside>
+
+  <!-- Overlay Mobile Sidebar -->
+  <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+  <main class="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+
+    <!-- TAB 1: DASHBOARD OVERVIEW -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-wide">Bảng Điều Khiển Tổng Quan</h2>
+          <p class="text-xs text-slate-400 mt-1">Theo dõi số liệu tài khoản và kho Key kinh doanh 24/7</p>
+        </div>
+        <button onclick="refreshData()" class="px-4 py-2 bg-cyberCard border border-cyberBorder hover:border-accentPurple rounded-xl text-xs font-bold text-slate-300 hover:text-white flex items-center gap-2 transition-all">
+          <i class="fa-solid fa-rotate"></i> Làm mới dữ liệu
+        </button>
+      </div>
+
+      <!-- Stat Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Stat Card 1 -->
+        <div class="glass-panel p-5 rounded-2xl border border-cyberBorder relative overflow-hidden group hover:border-accentPurple/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng Thành Viên</span>
+            <div class="w-10 h-10 rounded-xl bg-accentPurple/10 text-accentPurple flex items-center justify-center text-lg">
+              <i class="fa-solid fa-users"></i>
+            </div>
+          </div>
+          <div class="mt-4">
+            <h3 class="text-2xl font-black text-white" id="statTotalUsers">0</h3>
+            <p class="text-[11px] text-successGreen mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-arrow-up text-[9px]"></i> Đang hoạt động trên hệ thống
+            </p>
+          </div>
+        </div>
+
+        <!-- Stat Card 2 -->
+        <div class="glass-panel p-5 rounded-2xl border border-cyberBorder relative overflow-hidden group hover:border-accentOrange/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng Quỹ Số Dư</span>
+            <div class="w-10 h-10 rounded-xl bg-accentOrange/10 text-accentOrange flex items-center justify-center text-lg">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+          </div>
+          <div class="mt-4">
+            <h3 class="text-2xl font-black text-accentOrange" id="statTotalBalance">0đ</h3>
+            <p class="text-[11px] text-slate-400 mt-1">Tổng tiền khả dụng trong tài khoản</p>
+          </div>
+        </div>
+
+        <!-- Stat Card 3 -->
+        <div class="glass-panel p-5 rounded-2xl border border-cyberBorder relative overflow-hidden group hover:border-indigo-500/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Key Trong Kho</span>
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-box-archive"></i>
+            </div>
+          </div>
+          <div class="mt-4">
+            <h3 class="text-2xl font-black text-indigo-400" id="statAvailableKeys">0</h3>
+            <p class="text-[11px] text-slate-400 mt-1">Sẵn sàng bán tự động</p>
+          </div>
+        </div>
+
+        <!-- Stat Card 4 -->
+        <div class="glass-panel p-5 rounded-2xl border border-cyberBorder relative overflow-hidden group hover:border-successGreen/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Key Đã Đổ Sỉ/Bán</span>
+            <div class="w-10 h-10 rounded-xl bg-successGreen/10 text-successGreen flex items-center justify-center text-lg">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+          </div>
+          <div class="mt-4">
+            <h3 class="text-2xl font-black text-successGreen" id="statSoldKeys">0</h3>
+            <p class="text-[11px] text-successGreen mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-circle-check text-[9px]"></i> Đã bàn giao thành công
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Quick Importer Shortcut Card -->
+        <div class="glass-panel p-6 rounded-2xl border border-cyberBorder lg:col-span-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-4">
+              <div class="p-2.5 rounded-xl bg-accentPurple/20 text-accentPurple">
+                <i class="fa-solid fa-bolt text-lg"></i>
+              </div>
+              <h3 class="font-bold text-base text-white">Nạp Key Nhanh</h3>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed mb-4">
+              Thêm hàng loạt mã kích hoạt Key Game vào hệ thống tự động bán 24/7 chỉ với 1 cú click.
+            </p>
+          </div>
+          <button onclick="switchTab('keys')" class="w-full py-3 bg-gradient-to-r from-accentPurple to-indigo-600 hover:opacity-90 rounded-xl font-bold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg shadow-accentPurple/20 transition-all">
+            <i class="fa-solid fa-plus-circle"></i> Đến Trang Thêm Key
+          </button>
+        </div>
+
+        <!-- System Activity Preview -->
+        <div class="glass-panel p-6 rounded-2xl border border-cyberBorder lg:col-span-2">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-base text-white flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-accentOrange"></i> Nhật Ký Hoạt Động Mới
+            </h3>
+            <span class="text-[11px] text-slate-400">Tự động làm mới</span>
+          </div>
+          <div class="space-y-3" id="recentLogContainer">
+            <!-- Logs rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: USER BALANCE MANAGEMENT -->
+    <section id="tab-users" class="tab-content hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-wide">Quản Lý Quỹ Số Dư Thành Viên</h2>
+          <p class="text-xs text-slate-400 mt-1">Tra cứu, cộng hoặc trừ tiền tài khoản người dùng trực tiếp</p>
+        </div>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div class="glass-panel p-4 rounded-2xl border border-cyberBorder flex flex-col sm:flex-row gap-3">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="userSearchInput" onkeyup="filterUsers()" placeholder="Tìm theo Email hoặc User ID..." 
+            class="w-full bg-cyberDark/80 border border-cyberBorder rounded-xl pl-11 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-accentPurple transition-all">
+        </div>
+      </div>
+
+      <!-- Users Table Card -->
+      <div class="glass-panel rounded-2xl border border-cyberBorder overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-cyberDark/60 border-b border-cyberBorder text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                <th class="p-4">Tài Khoản (Email)</th>
+                <th class="p-4">User ID</th>
+                <th class="p-4">Số Dư Hiện Tại</th>
+                <th class="p-4 text-center">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody" class="divide-y divide-cyberBorder/50 text-xs">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: KEY INVENTORY MANAGEMENT -->
+    <section id="tab-keys" class="tab-content hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-black text-white tracking-wide">Quản Lý Kho Key Auto</h2>
+          <p class="text-xs text-slate-400 mt-1">Thêm danh sách Key hàng loạt và theo dõi trạng thái đã bán</p>
+        </div>
+      </div>
+
+      <!-- Add Key Form Card -->
+      <div class="glass-panel p-6 rounded-2xl border border-cyberBorder space-y-4">
+        <h3 class="font-extrabold text-sm uppercase tracking-wider text-accentPurple flex items-center gap-2">
+          <i class="fa-solid fa-file-import"></i> Thêm Key Mới Vào Kho (Batch Importer)
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Select Game -->
+          <div>
+            <label class="block text-xs text-slate-400 font-semibold mb-1.5">Chọn Game</label>
+            <select id="keyGameSelect" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-accentPurple">
+              <option value="Free Fire ADR&PC">Free Fire ADR&PC</option>
+              <option value="Free Fire IOS">Free Fire IOS</option>
+              <option value="PUBG IOS">PUBG IOS</option>
+              <option value="Liên Quân Mobile IOS">Liên Quân Mobile IOS</option>
+            </select>
+          </div>
+
+          <!-- Select App -->
+          <div>
+            <label class="block text-xs text-slate-400 font-semibold mb-1.5">Chọn Tên Tool/App</label>
+            <select id="keyAppSelect" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-accentPurple">
+              <option value="dt00">dt00</option>
+              <option value="dt01">dt01</option>
+              <option value="dt09 VIP">dt09 VIP</option>
+            </select>
+          </div>
+
+          <!-- Select Package / Duration -->
+          <div>
+            <label class="block text-xs text-slate-400 font-semibold mb-1.5">Thời Hạn Gói</label>
+            <select id="keyPackageSelect" class="w-full bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-accentPurple">
+              <option value="3 Ngày">3 Ngày</option>
+              <option value="7 Ngày">7 Ngày</option>
+              <option value="15 Ngày">15 Ngày</option>
+              <option value="30 Ngày">30 Ngày</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Key Batch Textarea -->
+        <div>
+          <label class="block text-xs text-slate-400 font-semibold mb-1.5">
+            Danh Sách Mã Key (Dán nhiều key, mỗi key 1 dòng):
+          </label>
+          <textarea id="keyBatchInput" rows="4" placeholder="DT09-KEY-8829-XXXX&#10;DT09-KEY-8830-YYYY&#10;DT09-KEY-8831-ZZZZ"
+            class="w-full bg-cyberDark border border-cyberBorder rounded-xl p-3 text-xs text-emerald-400 font-mono focus:outline-none focus:border-accentPurple resize-none"></textarea>
+        </div>
+
+        <div class="flex justify-end">
+          <button onclick="submitBatchKeys()" class="px-6 py-2.5 bg-gradient-to-r from-accentOrange to-amber-600 hover:opacity-90 rounded-xl font-extrabold text-xs text-white shadow-lg shadow-accentOrange/20 flex items-center gap-2 transition-all">
+            <i class="fa-solid fa-cloud-arrow-up"></i> NẠP VÀO HỆ THỐNG
+          </button>
+        </div>
+      </div>
+
+      <!-- Inventory Table & Filters -->
+      <div class="glass-panel p-4 rounded-2xl border border-cyberBorder flex flex-col sm:flex-row justify-between gap-3">
+        <div class="relative flex-1">
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="keySearchInput" onkeyup="filterKeys()" placeholder="Tìm theo Mã Key, Game hoặc Gói..." 
+            class="w-full bg-cyberDark/80 border border-cyberBorder rounded-xl pl-11 pr-4 py-2 text-xs text-white focus:outline-none focus:border-accentPurple">
+        </div>
+
+        <div class="flex gap-2">
+          <select id="keyStatusFilter" onchange="filterKeys()" class="bg-cyberDark border border-cyberBorder rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-accentPurple">
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="UNSOLD">Còn tồn kho</option>
+            <option value="SOLD">Đã bán</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Inventory List Table -->
+      <div class="glass-panel rounded-2xl border border-cyberBorder overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-cyberDark/60 border-b border-cyberBorder text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                <th class="p-4">Mã Key (License)</th>
+                <th class="p-4">Tên Game</th>
+                <th class="p-4">Ứng Dụng</th>
+                <th class="p-4">Gói</th>
+                <th class="p-4">Trạng Thái</th>
+                <th class="p-4 text-center">Xóa Key</th>
+              </tr>
+            </thead>
+            <tbody id="keyTableBody" class="divide-y divide-cyberBorder/50 text-xs font-mono">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="balanceModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-cyberCard border border-cyberBorder w-full max-w-md rounded-2xl p-6 space-y-5 animate-modal shadow-2xl">
+      <div class="flex justify-between items-center border-b border-cyberBorder pb-3">
+        <h3 class="font-extrabold text-base text-white flex items-center gap-2">
+          <i class="fa-solid fa-money-bill-transfer text-accentOrange"></i> Điều Chỉnh Số Dư
+        </h3>
+        <button onclick="closeBalanceModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div class="p-3 rounded-xl bg-cyberDark border border-cyberBorder text-xs space-y-1">
+          <p class="text-slate-400">Tài khoản: <span id="modalUserEmail" class="font-bold text-white">---</span></p>
+          <p class="text-slate-400">Số dư hiện tại: <span id="modalCurrentBalance" class="font-bold text-accentOrange">0đ</span></p>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 font-semibold mb-1">Số tiền thay đổi (VNĐ):</label>
+          <input type="number" id="balanceAmountInput" placeholder="Ví dụ: 50000 (dương = cộng, âm = trừ)" 
+            class="w-full bg-cyberDark border border-cyberBorder rounded-xl p-3 text-sm text-white focus:outline-none focus:border-accentPurple">
+        </div>
+
+        <!-- Quick Amount Selection Buttons -->
+        <div>
+          <label class="block text-[11px] text-slate-400 font-semibold mb-1.5">Chọn nhanh số tiền cộng:</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button onclick="addQuickBalance(10000)" class="py-1.5 bg-cyberDark hover:bg-slate-800 border border-cyberBorder rounded-lg text-xs font-bold text-slate-300 transition-all">+10k</button>
+            <button onclick="addQuickBalance(50000)" class="py-1.5 bg-cyberDark hover:bg-slate-800 border border-cyberBorder rounded-lg text-xs font-bold text-slate-300 transition-all">+50k</button>
+            <button onclick="addQuickBalance(100000)" class="py-1.5 bg-cyberDark hover:bg-slate-800 border border-cyberBorder rounded-lg text-xs font-bold text-slate-300 transition-all">+100k</button>
+            <button onclick="addQuickBalance(500000)" class="py-1.5 bg-cyberDark hover:bg-slate-800 border border-cyberBorder rounded-lg text-xs font-bold text-slate-300 transition-all">+500k</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeBalanceModal()" class="flex-1 py-2.5 bg-cyberDark border border-cyberBorder hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-300 transition-all">Hủy</button>
+        <button onclick="confirmBalanceChange()" class="flex-1 py-2.5 bg-gradient-to-r from-accentPurple to-indigo-600 hover:opacity-90 rounded-xl text-xs font-bold text-white shadow-lg shadow-accentPurple/20 transition-all">Xác Nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <script>
+    /* ==========================================================================
+       1. INITIAL STATE & MOCK DATA SETUP
+       ========================================================================== */
+    let isSupabaseMode = false;
+    let selectedUserIdForModal = null;
+
+    // Initial Mock State (Used when running offline or standalone)
+    let mockUsers = [
+      { id: 'usr-8821a', email: 'user_882@gmail.com', balance: 5000000 },
+      { id: 'usr-7712b', email: 'duytoan_pro@gmail.com', balance: 3200000 },
+      { id: 'usr-9943c', email: 'gamer_9x@yahoo.com', balance: 1800000 },
+      { id: 'usr-3312d', email: 'khang_player@gmail.com', balance: 250000 },
+      { id: 'usr-1209e', email: 'toan_freefire@gmail.com', balance: 60000 }
+    ];
+
+    let mockKeys = [
+      { id: 1, key_code: 'FF-DT00-3D-9812A-9921', game_name: 'Free Fire ADR&PC', app_name: 'dt00', package_name: '3 Ngày', is_used: false },
+      { id: 2, key_code: 'FF-DT00-3D-4412B-7712', game_name: 'Free Fire ADR&PC', app_name: 'dt00', package_name: '3 Ngày', is_used: false },
+      { id: 3, key_code: 'FF-DT00-15D-0091C-1123', game_name: 'Free Fire ADR&PC', app_name: 'dt00', package_name: '15 Ngày', is_used: true },
+      { id: 4, key_code: 'PUBG-DT00-7D-8812D-3312', game_name: 'PUBG IOS', app_name: 'dt00', package_name: '7 Ngày', is_used: false },
+      { id: 5, key_code: 'LQ-DT09-30D-5512E-9900', game_name: 'Liên Quân Mobile IOS', app_name: 'dt09 VIP', package_name: '30 Ngày', is_used: true }
+    ];
+
+    let mockLogs = [
+      { time: '10 phút trước', text: 'Admin đã thêm 50 Key "Free Fire ADR&PC" loại 3 Ngày' },
+      { time: '45 phút trước', text: 'Thành viên duytoan_pro@gmail.com được cộng 500.000đ' },
+      { time: '2 giờ trước', text: 'Hệ thống tự động xuất 1 Key "PUBG IOS" cho user_882' }
+    ];
+
+    /* ==========================================================================
+       2. LIFECYCLE & INITIALIZATION
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      initSidebarEvents();
+      refreshData();
+    });
+
+    function initSidebarEvents() {
+      const mobileBtn = document.getElementById('mobileMenuBtn');
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      const toggleMobileMenu = () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      };
+
+      mobileBtn?.addEventListener('click', toggleMobileMenu);
+      overlay?.addEventListener('click', toggleMobileMenu);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('text-accentPurple', 'bg-accentPurple/10', 'border', 'border-accentPurple/30');
+        btn.classList.add('text-slate-400');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if (activeNav) {
+        activeNav.classList.remove('text-slate-400');
+        activeNav.classList.add('text-accentPurple', 'bg-accentPurple/10', 'border', 'border-accentPurple/30');
+      }
+
+      // Close mobile sidebar if open
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('sidebarOverlay').classList.add('hidden');
+    }
+
+    function toggleSupabaseMode() {
+      if (typeof supabaseClient === 'undefined') {
+        showToast('Chưa cấu hình Supabase Client! Vẫn sử dụng chế độ Giả lập (Mock).', 'error');
+        return;
+      }
+      isSupabaseMode = !isSupabaseMode;
+      const badge = document.getElementById('systemModeBadge');
+      if (isSupabaseMode) {
+        badge.innerText = 'Supabase Real-time';
+        badge.className = 'text-successGreen font-semibold';
+        showToast('Đã chuyển sang chế độ Supabase Thực tế!', 'success');
+      } else {
+        badge.innerText = 'Giả Lập (Mock)';
+        badge.className = 'text-accentOrange font-semibold';
+        showToast('Đã chuyển về chế độ Giả lập Dữ liệu!', 'info');
+      }
+      refreshData();
+    }
+
+    /* ==========================================================================
+       3. DATA REFRESH & RENDERERS
+       ========================================================================== */
+    async function refreshData() {
+      if (isSupabaseMode && typeof supabaseClient !== 'undefined') {
+        await fetchSupabaseData();
+      } else {
+        renderStats();
+        renderUsersTable(mockUsers);
+        renderKeysTable(mockKeys);
+        renderLogs();
+      }
+    }
+
+    function renderStats() {
+      const totalUsers = mockUsers.length;
+      const totalBalance = mockUsers.reduce((sum, u) => sum + (u.balance || 0), 0);
+      const availableKeys = mockKeys.filter(k => !k.is_used).length;
+      const soldKeys = mockKeys.filter(k => k.is_used).length;
+
+      document.getElementById('statTotalUsers').innerText = totalUsers.toLocaleString('vi-VN');
+      document.getElementById('statTotalBalance').innerText = totalBalance.toLocaleString('vi-VN') + 'đ';
+      document.getElementById('statAvailableKeys').innerText = availableKeys.toLocaleString('vi-VN');
+      document.getElementById('statSoldKeys').innerText = soldKeys.toLocaleString('vi-VN');
+    }
+
+    function renderUsersTable(usersList) {
+      const tbody = document.getElementById('userTableBody');
+      tbody.innerHTML = '';
+
+      if (usersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Không tìm thấy người dùng nào.</td></tr>`;
+        return;
+      }
+
+      usersList.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-cyberCard/80 transition-all';
+        tr.innerHTML = `
+          <td class="p-4 font-semibold text-white flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-accentPurple/20 text-accentPurple flex items-center justify-center font-bold text-xs">
+              ${user.email.charAt(0).toUpperCase()}
+            </div>
+            ${user.email}
+          </td>
+          <td class="p-4 text-slate-400 font-mono text-[11px]">${user.id}</td>
+          <td class="p-4 font-bold text-accentOrange">${(user.balance || 0).toLocaleString('vi-VN')}đ</td>
+          <td class="p-4 text-center">
+            <button onclick="openBalanceModal('${user.id}')" class="px-3 py-1.5 bg-accentPurple/20 hover:bg-accentPurple/40 border border-accentPurple/40 rounded-lg text-accentPurple font-bold text-xs flex items-center gap-1.5 mx-auto transition-all">
+              <i class="fa-solid fa-pen-to-square"></i> Nạp/Trừ Tiền
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderKeysTable(keysList) {
+      const tbody = document.getElementById('keyTableBody');
+      tbody.innerHTML = '';
+
+      if (keysList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Không có dữ liệu Key nào.</td></tr>`;
+        return;
+      }
+
+      keysList.forEach(key => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-cyberCard/80 transition-all';
+        tr.innerHTML = `
+          <td class="p-4 font-bold text-emerald-400 select-all">${key.key_code}</td>
+          <td class="p-4 text-slate-300 font-sans">${key.game_name}</td>
+          <td class="p-4 text-slate-400 font-sans">${key.app_name}</td>
+          <td class="p-4 text-slate-300 font-sans">${key.package_name}</td>
+          <td class="p-4">
+            ${key.is_used 
+              ? `<span class="px-2 py-0.5 rounded-md bg-dangerRed/10 text-dangerRed border border-dangerRed/30 text-[10px] font-bold font-sans">ĐÃ BÁN</span>`
+              : `<span class="px-2 py-0.5 rounded-md bg-successGreen/10 text-successGreen border border-successGreen/30 text-[10px] font-bold font-sans">TỒN KHO</span>`}
+          </td>
+          <td class="p-4 text-center">
+            <button onclick="deleteKey(${key.id})" class="p-1.5 text-slate-400 hover:text-dangerRed transition-all">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('recentLogContainer');
+      container.innerHTML = mockLogs.map(log => `
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-cyberDark/60 border border-cyberBorder/40 text-xs">
+          <div class="w-2 h-2 rounded-full bg-accentPurple mt-1.5"></div>
+          <div class="flex-1">
+            <p class="text-slate-200 font-medium">${log.text}</p>
+            <span class="text-[10px] text-slate-500">${log.time}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /* ==========================================================================
+       4. USER BALANCE LOGIC & MODAL
+       ========================================================================== */
+    function filterUsers() {
+      const query = document.getElementById('userSearchInput').value.toLowerCase();
+      const filtered = mockUsers.filter(u => 
+        u.email.toLowerCase().includes(query) || u.id.toLowerCase().includes(query)
+      );
+      renderUsersTable(filtered);
+    }
+
+    function openBalanceModal(userId) {
+      const user = mockUsers.find(u => u.id === userId);
+      if (!user) return;
+
+      selectedUserIdForModal = userId;
+      document.getElementById('modalUserEmail').innerText = user.email;
+      document.getElementById('modalCurrentBalance').innerText = (user.balance || 0).toLocaleString('vi-VN') + 'đ';
+      document.getElementById('balanceAmountInput').value = '';
+      document.getElementById('balanceModal').classList.remove('hidden');
+    }
+
+    function closeBalanceModal() {
+      document.getElementById('balanceModal').classList.add('hidden');
+      selectedUserIdForModal = null;
+    }
+
+    function addQuickBalance(amount) {
+      const input = document.getElementById('balanceAmountInput');
+      const currentVal = parseInt(input.value) || 0;
+      input.value = currentVal + amount;
+    }
+
+    async function confirmBalanceChange() {
+      const amount = parseInt(document.getElementById('balanceAmountInput').value);
+      if (isNaN(amount) || amount === 0) {
+        showToast('Vui lòng nhập số tiền hợp lệ!', 'error');
+        return;
+      }
+
+      const user = mockUsers.find(u => u.id === selectedUserIdForModal);
+      if (!user) return;
+
+      if (isSupabaseMode && typeof supabaseClient !== 'undefined') {
+        const newBalance = (user.balance || 0) + amount;
+        const { error } = await supabaseClient
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', user.id);
+
+        if (error) {
+          showToast(`Lỗi Supabase: ${error.message}`, 'error');
+          return;
+        }
+      }
+
+      // Update local state
+      user.balance = (user.balance || 0) + amount;
+      mockLogs.unshift({
+        time: 'Vừa xong',
+        text: `Admin đã ${amount > 0 ? 'cộng' : 'trừ'} ${Math.abs(amount).toLocaleString('vi-VN')}đ cho ${user.email}`
+      });
+
+      showToast(`Đã điều chỉnh thành công ${amount.toLocaleString('vi-VN')}đ!`, 'success');
+      closeBalanceModal();
+      refreshData();
+    }
+
+    /* ==========================================================================
+       5. BATCH KEY IMPORTER & INVENTORY LOGIC
+       ========================================================================== */
+    async function submitBatchKeys() {
+      const game = document.getElementById('keyGameSelect').value;
+      const app = document.getElementById('keyAppSelect').value;
+      const pkg = document.getElementById('keyPackageSelect').value;
+      const rawText = document.getElementById('keyBatchInput').value;
+
+      if (!rawText.trim()) {
+        showToast('Vui lòng nhập danh sách mã Key!', 'error');
+        return;
+      }
+
+      // Clean lines, trim whitespace, remove duplicates
+      const lines = rawText.split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+
+      const uniqueKeys = [...newSet(lines)];
+
+      if (uniqueKeys.length === 0) {
+        showToast('Không tìm thấy mã Key hợp lệ.', 'error');
+        return;
+      }
+
+      if (isSupabaseMode && typeof supabaseClient !== 'undefined') {
+        const payload = uniqueKeys.map(k => ({
+          game_name: game,
+          app_name: app,
+          package_name: pkg,
+          key_code: k,
+          is_used: false
+        }));
+
+        const { error } = await supabaseClient.from('keys_store').insert(payload);
+        if (error) {
+          showToast(`Lỗi Supabase: ${error.message}`, 'error');
+          return;
+        }
+      } else {
+        // Push to local mock state
+        uniqueKeys.forEach(k => {
+          mockKeys.unshift({
+            id: Date.now() + Math.random(),
+            key_code: k,
+            game_name: game,
+            app_name: app,
+            package_name: pkg,
+            is_used: false
+          });
+        });
+      }
+
+      mockLogs.unshift({
+        time: 'Vừa xong',
+        text: `Admin đã nạp ${uniqueKeys.length} Key mới cho game "${game}"`
+      });
+
+      document.getElementById('keyBatchInput').value = '';
+      showToast(`Thêm thành công ${uniqueKeys.length} Key vào kho!`, 'success');
+      refreshData();
+    }
+
+    function filterKeys() {
+      const query = document.getElementById('keySearchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('keyStatusFilter').value;
+
+      const filtered = mockKeys.filter(k => {
+        const matchesQuery = k.key_code.toLowerCase().includes(query) ||
+                             k.game_name.toLowerCase().includes(query) ||
+                             k.package_name.toLowerCase().includes(query);
+        const matchesStatus = statusFilter === 'ALL' ? true :
+                             statusFilter === 'SOLD' ? k.is_used : !k.is_used;
+        return matchesQuery && matchesStatus;
+      });
+
+      renderKeysTable(filtered);
+    }
+
+    async function deleteKey(keyId) {
+      if (!confirm('Bạn có chắc chắn muốn xóa Key này khỏi hệ thống?')) return;
+
+      if (isSupabaseMode && typeof supabaseClient !== 'undefined') {
+        const { error } = await supabaseClient.from('keys_store').delete().eq('id', keyId);
+        if (error) {
+          showToast(`Lỗi khi xóa: ${error.message}`, 'error');
+          return;
+        }
+      }
+
+      mockKeys = mockKeys.filter(k => k.id !== keyId);
+      showToast('Đã xóa Key khỏi kho!', 'info');
+      refreshData();
+    }
+
+    /* ==========================================================================
+       6. REAL SUPABASE INTEGRATION HELPER
+       ========================================================================== */
+    async function fetchSupabaseData() {
+      try {
+        // Fetch users
+        const { data: usersData, error: uErr } = await supabaseClient.from('profiles').select('*');
+        if (!uErr && usersData) mockUsers = usersData;
+
+        // Fetch keys
+        const { data: keysData, error: kErr } = await supabaseClient.from('keys_store').select('*').order('id', { ascending: false });
+        if (!kErr && keysData) mockKeys = keysData;
+
+        renderStats();
+        filterUsers();
+        filterKeys();
+        renderLogs();
+      } catch (err) {
+        showToast('Lỗi kết nối dữ liệu Supabase!', 'error');
+      }
+    }
+
+    /* ==========================================================================
+       7. UI TOAST MESSAGES
+       ========================================================================== */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let bg = 'bg-cyberCard border-cyberBorder text-white';
+      let icon = 'fa-circle-info text-accentPurple';
+
+      if (type === 'success') {
+        bg = 'bg-cyberCard border-successGreen/50 text-white';
+        icon = 'fa-circle-check text-successGreen';
+      } else if (type === 'error') {
+        bg = 'bg-cyberCard border-dangerRed/50 text-white';
+        icon = 'fa-triangle-exclamation text-dangerRed';
+      }
+
+      toast.className = `glass-panel p-3.5 rounded-xl border ${bg} shadow-2xl flex items-center gap-3 text-xs pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300`;
+      toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i> <span>${message}</span>`;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
