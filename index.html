@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>dt09 - Tải Game & Tool Auto</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-main: #060814;
+      --card-bg: #111428;
+      --card-border: #1d2242;
+      --accent-purple: #8b5cf6;
+      --accent-orange: #f97316;
+      --text-main: #ffffff;
+      --text-muted: #808aab;
+      --danger-red: #ef4444;
+      --success-green: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+    body { background-color: #020307; color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: radial-gradient(circle at top, #181538 0%, #060814 80%);
+      position: relative;
+      padding-bottom: 80px;
+      min-height: 100vh;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    .hidden { display: none !important; }
+
+    /* AUTH SCREEN */
+    .auth-overlay { padding: 30px 20px; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; }
+    .auth-header { text-align: center; margin-bottom: 24px; }
+    .auth-header h2 { font-size: 24px; color: var(--accent-purple); margin-bottom: 6px; }
+    .auth-header p { font-size: 13px; color: var(--text-muted); }
+    .auth-tabs { display: flex; background: #111428; border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 20px; padding: 4px; }
+    .auth-tab { flex: 1; padding: 10px; border: none; background: none; color: var(--text-muted); font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 8px; }
+    .auth-tab.active { background: var(--accent-purple); color: white; }
+    .auth-form { display: flex; flex-direction: column; gap: 14px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 12px; color: var(--text-muted); }
+    .input-group input { background: #151833; border: 1px solid #23284c; border-radius: 10px; padding: 12px; color: white; font-size: 14px; outline: none; }
+    .btn-auth { background: linear-gradient(135deg, var(--accent-purple), #6d28d9); border: none; color: white; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; margin-top: 10px; }
+    .auth-message { font-size: 12px; text-align: center; margin-top: 10px; min-height: 18px; }
+    .auth-message.error { color: var(--danger-red); }
+    .auth-message.success { color: var(--success-green); }
+
+    /* HEADER */
+    .profile-header { position: sticky; top: 0; z-index: 99; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(18, 17, 39, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 14px; }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 42px; height: 42px; border-radius: 50%; background: #3b82f6; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.15); }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-details .name { font-size: 13px; font-weight: 700; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-details .id { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .balance-pill { background: #141622; border: 1px solid #3d3113; color: #eab308; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 13px; }
+    .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 10px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+
+    .banner-card { background: linear-gradient(135deg, #1d1b3c 0%, #12152e 100%); border: 1px solid var(--card-border); border-radius: 18px; margin: 0 14px 14px 14px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+    .banner-icon { width: 46px; height: 46px; background: #a855f7; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+    .banner-text h3 { font-size: 17px; font-weight: 800; }
+    .banner-text p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* CARD DESIGN */
+    .form-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 14px; margin: 0 14px 12px 14px; }
+    .form-header { display: flex; justify-content: space-between; align-items: center; }
+    .form-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-title i { color: var(--accent-purple); background: rgba(139, 92, 246, 0.15); padding: 6px; border-radius: 8px; }
+    
+    .select-btn { background: #191d38; border: 1px solid #2d345e; color: white; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .select-btn img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
+
+    .selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .grid-item { background: #151833; border: 1px solid #23284c; border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
+    .grid-item.selected { border-color: var(--accent-purple); background: rgba(139, 92, 246, 0.15); }
+    .grid-item img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
+
+    .alert-card { background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 14px; padding: 12px 14px; margin: 0 14px 14px 14px; }
+    .alert-title { color: #f59e0b; font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .alert-desc { font-size: 11px; color: #d1d5db; line-height: 1.4; }
+
+    .btn-download { width: calc(100% - 28px); margin: 0 14px 14px 14px; height: 50px; border-radius: 14px; border: none; background: linear-gradient(135deg, #a855f7, #6d28d9); color: white; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3); }
+
+    /* NÚT MỨC TIỀN NẠP */
+    .amount-btn { background: #151833; border: 1px solid #23284c; color: white; padding: 10px 4px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s ease; }
+    .amount-btn.active { background: rgba(249, 115, 22, 0.15); border-color: #f97316; color: #f97316; }
+
+    /* INFO ROW */
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+    .info-row span:first-child { color: var(--text-muted); }
+    .info-row span:last-child { font-weight: bold; }
+
+    .wheel-container { position: relative; width: 220px; height: 220px; margin: 20px auto; border-radius: 50%; border: 4px solid var(--accent-purple); background: conic-gradient(#8b5cf6 0 90deg, #111428 90deg 180deg, #f97316 180deg 270deg, #151833 270deg 360deg); transition: transform 3s cubic-bezier(0.1, 2.7, 0.58, 1); }
+    .wheel-pointer { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 18px solid #ef4444; z-index: 10; }
+
+    .code-input-box { width: 100%; background: #0c0e1e; border: 1px solid #1e2448; border-radius: 12px; padding: 14px; color: white; font-size: 13px; outline: none; margin-top: 10px; margin-bottom: 10px; }
+    .code-input-box::placeholder { color: #515b7d; }
+    .btn-apply-code { width: 100%; background: linear-gradient(135deg, #312e81, #581c87); border: 1px solid #6366f1; color: white; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 12px rgba(99, 102, 241, 0.2); }
+    
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .stat-card { background: rgba(21, 24, 51, 0.6); border: 1px solid #23284c; border-radius: 14px; padding: 14px 6px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .stat-icon { font-size: 18px; margin-bottom: 8px; }
+    .stat-icon.cyan { color: #06b6d4; }
+    .stat-icon.yellow { color: #eab308; }
+    .stat-icon.green { color: #10b981; }
+    .stat-val { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+    .stat-lbl { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 60px; background: #060814; border-top: 1px solid #16182e; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+    .nav-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; cursor: pointer; width: 20%; }
+    .nav-btn.active { color: var(--accent-purple); font-weight: bold; }
+    .nav-btn i { font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- LOGIN / REGISTER SCREEN -->
+    <div id="authScreen" class="auth-overlay">
+      <div class="auth-header">
+        <h2>dt09</h2>
+        <p>Hệ thống Tải Hack Game Auto 24/7</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">Đăng nhập</button>
+        <button class="auth-tab" id="tabSignupBtn" onclick="switchAuthTab('signup')">Đăng ký</button>
+      </div>
+
+      <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="nhap@email.com" required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-auth">ĐĂNG NHẬP</button>
+      </form>
+
+      <form id="signupForm" class="auth-form hidden" onsubmit="handleSignup(event)">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="nhap@email.com" required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="signupPassword" placeholder="Tối thiểu 6 ký tự" required>
+        </div>
+        <button type="submit" class="btn-auth">TẠO TÀI KHOẢN</button>
+      </form>
+
+      <div id="authMessage" class="auth-message"></div>
+    </div>
+
+
+    <!-- MAIN SCREEN -->
+    <div id="mainShopScreen" class="hidden">
+      <!-- Header -->
+      <div class="profile-header">
+        <div class="user-info">
+          <div class="user-avatar">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=DuyToan" alt="avatar">
+          </div>
+          <div class="user-details">
+            <div class="name" id="userDisplayName">User</div>
+            <div class="id" id="userIdDisplay">ID: ------</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="balance-pill"><span id="userBalance">0</span>đ</div>
+          <button class="btn-logout" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+
+      <!-- TAB 1: TẢI GAME -->
+      <div id="tab-download" class="tab-content">
+        <div class="banner-card">
+          <div class="banner-icon"><i class="fa-solid fa-download"></i></div>
+          <div class="banner-text">
+            <h3>dt09 Download Center</h3>
+            <p>Tải xuống bản hack & mod mới nhất</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-title"><i class="fa-solid fa-gamepad"></i><span>Chọn mục game</span></div>
+            <button class="select-btn" onclick="toggleGameList()">
+              <img id="selectedGameImg" src="https://api.dicebear.com/7.x/identicon/svg?seed=FF" alt="ff">
+              <span id="selectedGameText">Free Fire</span>
+              <i class="fa-solid fa-chevron-down" id="gameChevron" style="font-size: 10px;"></i>
+            </button>
+          </div>
+          <div class="selection-grid" id="gameGrid">
+            <div class="grid-item selected" onclick="selectGame('Free Fire', 'https://api.dicebear.com/7.x/identicon/svg?seed=FF', this)">
+              <img src="https://api.dicebear.com/7.x/identicon/svg?seed=FF" alt="ff">
+              <span>Free Fire</span>
+            </div>
+            <div class="grid-item" onclick="selectGame('Liên Quân', 'https://api.dicebear.com/7.x/identicon/svg?seed=LQ', this)">
+              <img src="https://api.dicebear.com/7.x/identicon/svg?seed=LQ" alt="lq">
+              <span>Liên Quân</span>
+            </div>
+            <div class="grid-item" onclick="selectGame('Roblox', 'https://api.dicebear.com/7.x/identicon/svg?seed=Roblox', this)">
+              <img src="https://api.dicebear.com/7.x/identicon/svg?seed=Roblox" alt="roblox">
+              <span>Roblox</span>
+            </div>
+            <div class="grid-item" onclick="selectGame('PUBG Mobile', 'https://api.dicebear.com/7.x/identicon/svg?seed=PUBG', this)">
+              <img src="https://api.dicebear.com/7.x/identicon/svg?seed=PUBG" alt="pubg">
+              <span>PUBG Mobile</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-title"><i class="fa-solid fa-cube"></i><span>Chọn ứng dụng</span></div>
+            <button class="select-btn" onclick="toggleAppList()">
+              <img id="selectedAppImg" src="https://api.dicebear.com/7.x/bottts/svg?seed=PatoCam" alt="app">
+              <span id="selectedAppText">Pato Cam Loader</span>
+              <i class="fa-solid fa-chevron-down" id="appChevron" style="font-size: 10px;"></i>
+            </button>
+          </div>
+          <div class="selection-grid" id="appGrid"></div>
+        </div>
+
+        <div class="alert-card">
+          <div class="alert-title"><i class="fa-solid fa-triangle-exclamation"></i><span>LƯU Ý KHI TẢI VỀ</span></div>
+          <div class="alert-desc">Sản phẩm hoạt động tốt trên Android thấp và trung bình. Hãy gỡ cài đặt bản game gốc trước khi cài bản Mod.</div>
+        </div>
+
+        <button class="btn-download" onclick="triggerDownload()">
+          <i class="fa-solid fa-circle-down" style="font-size: 18px;"></i>
+          <span id="downloadBtnText">TẢI PATO CAM LOADER</span>
+        </button>
+      </div>
+
+      <!-- TAB 2: DONATE / NẠP TIỀN -->
+      <div id="tab-donate" class="tab-content hidden">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 14px 12px 14px;">
+          <div style="background: rgba(139, 92, 246, 0.2); border: 1px solid var(--accent-purple); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <i class="fa-solid fa-qrcode" style="font-size: 20px; color: var(--accent-purple);"></i>
+            <div>
+              <div style="font-size: 12px; font-weight: 800; color: white;">Chuyển khoản QR</div>
+              <div style="font-size: 10px; color: var(--text-muted);">VietQR Tự động 24/7</div>
+            </div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; opacity: 0.6;">
+            <i class="fa-solid fa-mobile-screen-button" style="font-size: 20px; color: var(--text-muted);"></i>
+            <div>
+              <div style="font-size: 12px; font-weight: 800; color: white;">Thẻ cào</div>
+              <div style="font-size: 10px; color: var(--text-muted);">Viettel, Mobi, Vina</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title" style="margin-bottom: 12px;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>CHỌN HOẶC NHẬP SỐ TIỀN</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+            <button class="amount-btn active" onclick="selectAmount(10000, this)">10.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(20000, this)">20.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(50000, this)">50.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(100000, this)">100.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(200000, this)">200.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(500000, this)">500.000đ</button>
+          </div>
+
+          <div style="position: relative; margin-bottom: 14px;">
+            <input type="number" id="customAmountInput" class="code-input-box" style="margin:0; padding-right: 50px;" placeholder="Số tiền khác (tối thiểu 10.000đ)" oninput="onCustomAmountInput(this)">
+            <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; font-size: 12px; color: #eab308;">VNĐ</span>
+          </div>
+
+          <button class="btn-download" style="width: 100%; margin: 0; background: linear-gradient(135deg, #f97316, #ea580c);" onclick="generateDepositQR()">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>TẠO MÃ QR NẠP TIỀN</span>
+          </button>
+
+          <div style="margin-top: 10px; font-size: 11px; color: var(--text-muted); text-align: center;">
+            <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Hệ thống VietQR đối soát tự động — Tiền vào ví tức thì sau 3–5 giây.
+          </div>
+        </div>
+
+        <!-- POPUP MÃ QR -->
+        <div id="qrModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px;">
+          <div style="background: #111428; border: 1px solid var(--card-border); border-radius: 20px; width: 100%; max-width: 400px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;">
+            <div style="font-size: 15px; font-weight: 800; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+              <i class="fa-solid fa-wallet" style="color: var(--accent-purple);"></i> Thông tin nạp tiền
+            </div>
+
+            <div style="background: #0b0d1b; border: 1px solid #1e2448; border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">SỐ TIỀN THANH TOÁN</div>
+              <div id="modalAmountDisplay" style="font-size: 22px; font-weight: 900; color: #f97316; margin: 4px 0 12px 0;">10.000đ</div>
+
+              <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 10px; color: #ef4444; font-weight: 800;">🔑 NỘI DUNG CHUYỂN KHOẢN (BẮT BUỘC)</span>
+                  <span style="background: #ef4444; color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 800;">QUAN TRỌNG</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="text" id="modalMemoInput" readonly style="width: 100%; background: #151833; border: 1px solid #23284c; color: #38bdf8; font-weight: 800; padding: 8px; border-radius: 8px; font-size: 13px; text-align: center;">
+                  <button onclick="copyMemo()" style="background: var(--accent-purple); border: none; color: white; padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; white-space: nowrap;">
+                    <i class="fa-solid fa-copy"></i> Sao chép
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style="background: #ffffff; padding: 12px; border-radius: 14px; display: inline-block; margin-bottom: 12px;">
+              <img id="modalQrImage" src="" alt="QR Code VietQR" style="width: 200px; height: 200px; display: block; border-radius: 8px;">
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+              <i class="fa-solid fa-qrcode"></i> Quét mã QR bằng ứng dụng ngân hàng bất kỳ
+            </div>
+
+            <div style="background: #151833; border-radius: 10px; padding: 10px 14px; text-align: left; font-size: 12px; margin-bottom: 14px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Ngân hàng:</span>
+                <span style="font-weight: 800; color: #60a5fa;">MBBank</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Chủ tài khoản:</span>
+                <span style="font-weight: 800;" id="modalAccountName">NGO DUY TOAN</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--text-muted);">Số tài khoản:</span>
+                <span style="font-weight: 800; color: #eab308;" id="modalAccountNumber">0355095429</span>
+              </div>
+            </div>
+
+            <button onclick="closeQrModal()" style="width: 100%; background: #23284c; border: none; color: white; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer;">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: TOP DONATE -->
+      <div id="tab-top" class="tab-content hidden">
+        <div class="form-card">
+          <div class="form-title" style="margin-bottom: 12px;"><i class="fa-solid fa-trophy"></i><span>BẢNG XẾP HẠNG TOP DONATE THÁNG</span></div>
+          <div id="topRankContainer">
+            <div style="text-align: center; color: var(--text-muted); padding: 10px;">Đang tải danh sách...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: VÒNG QUAY MAY MẮN (VQMM) -->
+      <div id="tab-wheel" class="tab-content hidden">
+        <div class="form-card" style="text-align: center;">
+          <div class="form-title" style="justify-content: center;"><i class="fa-solid fa-wand-magic-sparkles"></i><span>VÒNG QUAY MAY MẮN</span></div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Chi phí: 10.000đ / lượt quay (hoặc dùng lượt quay khả dụng: <span id="spinCountText" style="color:#eab308; font-weight:bold;">0</span>)</p>
+          
+          <div style="position: relative; display: inline-block;">
+            <div class="wheel-pointer"></div>
+            <div class="wheel-container" id="wheelEl"></div>
+          </div>
+
+          <button class="btn-download" style="margin: 10px auto 0 auto; width: 80%;" onclick="spinWheel()">QUAY NGAY</button>
+        </div>
+      </div>
+
+      <!-- TAB 5: CÁ NHÂN -->
+      <div id="tab-account" class="tab-content hidden">
+        <div class="form-card">
+          <div class="form-title"><i class="fa-solid fa-ticket"></i><span>Mã Voucher</span></div>
+          <input type="text" class="code-input-box" id="voucherCodeInput" placeholder="Nhập mã voucher">
+          <button class="btn-apply-code" onclick="applyVoucher()">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Áp Dụng Voucher</span>
+          </button>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title"><i class="fa-solid fa-gift"></i><span>Mã Giftcode</span></div>
+          <input type="text" class="code-input-box" id="giftCodeInput" placeholder="Nhập mã giftcode">
+          <button class="btn-apply-code" onclick="applyGiftcode()">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Áp Dụng Giftcode</span>
+          </button>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title"><i class="fa-solid fa-pie-chart"></i><span>Tổng Quan Tài Khoản</span></div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon cyan"><i class="fa-solid fa-key"></i></div>
+              <div class="stat-val" id="statBoughtCount">0</div>
+              <div class="stat-lbl">SP ĐÃ MUA</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon yellow"><i class="fa-solid fa-cart-shopping"></i></div>
+              <div class="stat-val" id="statTotalSpent">0đ</div>
+              <div class="stat-lbl">TỔNG CHI</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green"><i class="fa-solid fa-wallet"></i></div>
+              <div class="stat-val" id="statTotalDeposited">0đ</div>
+              <div class="stat-lbl">TỔNG NẠP</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 0 14px 14px 14px;">
+          <button class="btn-auth" style="background: #ef4444;" onclick="handleLogout()">ĐĂNG XUẤT TÀI KHOẢN</button>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <div class="bottom-nav">
+        <button class="nav-btn active" onclick="switchNavTab('download', this)"><i class="fa-solid fa-download"></i><span>Tải Game</span></button>
+        <button class="nav-btn" onclick="switchNavTab('donate', this)"><i class="fa-solid fa-heart"></i><span>Donate</span></button>
+        <button class="nav-btn" onclick="switchNavTab('top', this)"><i class="fa-solid fa-trophy"></i><span>Top Donate</span></button>
+        <button class="nav-btn" onclick="switchNavTab('wheel', this)"><i class="fa-solid fa-wand-magic-sparkles"></i><span>VQMM</span></button>
+        <button class="nav-btn" onclick="switchNavTab('account', this)"><i class="fa-solid fa-user"></i><span>Cá Nhân</span></button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    let gameAppData = {
+      'Free Fire': [
+        { name: 'Pato Cam Loader', img: 'https://api.dicebear.com/7.x/bottts/svg?seed=PatoCam', url: 'https://example.com/download/patocam' },
+        { name: 'Pato Blue Loader', img: 'https://api.dicebear.com/7.x/bottts/svg?seed=PatoBlue', url: 'https://example.com/download/patoblue' }
+      ]
+    };
+
+    let selectedGame = 'Free Fire';
+    let selectedApp = null;
+    let currentUser = null;
+    let currentBalance = 0;
+    let currentSpinCount = 0;
+    let currentRotation = 0;
+
+    let selectedDepositAmount = 10000;
+    const BANK_ACCOUNT = "0355095429";
+    const BANK_NAME = "NGO DUY TOAN";
+
+    window.onload = async function() {
+      if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          showMainShop(session.user);
+        } else {
+          showAuthScreen();
+        }
+      }
+    };
+
+    function showAuthScreen() {
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('mainShopScreen').classList.add('hidden');
+    }
+
+    async function showMainShop(user) {
+      currentUser = user;
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainShopScreen').classList.remove('hidden');
+      
+      const emailName = user.email.split('@')[0];
+      const shortId = user.id.substring(0, 8);
+
+      document.getElementById('userDisplayName').innerText = emailName;
+      document.getElementById('userIdDisplay').innerText = `ID: ${shortId}`;
+
+      await loadDynamicAppLinks();
+      renderAppGrid();
+      await fetchUserBalance();
+      loadTopDonate();
+      loadAccountOverview();
+      startOnlineHeartbeat();
+    }
+
+    async function loadDynamicAppLinks() {
+      if (typeof supabaseClient === 'undefined') return;
+      const { data, error } = await supabaseClient.from('app_links').select('*');
+      if (data && data.length > 0 && !error) {
+        data.forEach(item => {
+          if (!gameAppData['Free Fire']) gameAppData['Free Fire'] = [];
+          const index = gameAppData['Free Fire'].findIndex(a => a.name === item.name);
+          if (index !== -1) {
+            gameAppData['Free Fire'][index].url = item.url || gameAppData['Free Fire'][index].url;
+            if (item.img) gameAppData['Free Fire'][index].img = item.img;
+          } else {
+            gameAppData['Free Fire'].push({ name: item.name, img: item.img || 'https://api.dicebear.com/7.x/bottts/svg?seed=' + item.name, url: item.url });
+          }
+        });
+      }
+    }
+
+    function startOnlineHeartbeat() {
+      updatePresence();
+      setInterval(updatePresence, 120000);
+    }
+
+    async function updatePresence() {
+      if (!currentUser || typeof supabaseClient === 'undefined') return;
+      await supabaseClient.from('profiles').upsert({
+        id: currentUser.id,
+        email: currentUser.email,
+        last_seen: new Date().toISOString()
+      }, { onConflict: 'id' });
+    }
+
+    // Tải dữ liệu chuẩn từ DB Supabase (Tránh F5 bị mất)
+    async function fetchUserBalance() {
+      if (!currentUser || typeof supabaseClient === 'undefined') return;
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('balance, spin_count, total_deposited')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (data && !error) {
+        // Ép kiểu chuẩn dạng Số (Chống ghép chuỗi)
+        currentBalance = Number(data.balance) || 0;
+        currentSpinCount = Number(data.spin_count) || 0;
+
+        document.getElementById('userBalance').innerText = formatNumber(currentBalance);
+        if (document.getElementById('spinCountText')) {
+          document.getElementById('spinCountText').innerText = currentSpinCount;
+        }
+        document.getElementById('statTotalDeposited').innerText = formatNumber(Number(data.total_deposited) || 0) + 'đ';
+      }
+    }
+
+    async function loadAccountOverview() {
+      if (!currentUser || typeof supabaseClient === 'undefined') return;
+
+      const { data: orders } = await supabaseClient
+        .from('orders')
+        .select('*')
+        .eq('user_id', currentUser.id);
+
+      let boughtCount = orders ? orders.length : 0;
+      let totalSpent = 0;
+
+      if (orders) {
+        orders.forEach(item => totalSpent += Number(item.amount) || 0);
+      }
+
+      document.getElementById('statBoughtCount').innerText = boughtCount;
+      document.getElementById('statTotalSpent').innerText = formatNumber(totalSpent) + 'đ';
+    }
+
+    async function loadTopDonate() {
+      const container = document.getElementById('topRankContainer');
+      if (typeof supabaseClient === 'undefined') return;
+
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('email, balance')
+        .order('balance', { ascending: false })
+        .limit(5);
+
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 10px;">Chưa có dữ liệu xếp hạng</div>';
+        return;
+      }
+
+      let html = '';
+      data.forEach((item, index) => {
+        let rankBadge = `${index + 1}. `;
+        let colorStyle = '';
+
+        if (index === 0) { rankBadge = '🥇 Top 1: '; colorStyle = 'color: #eab308;'; }
+        else if (index === 1) { rankBadge = '🥈 Top 2: '; colorStyle = 'color: #94a3b8;'; }
+        else if (index === 2) { rankBadge = '🥉 Top 3: '; colorStyle = 'color: #b45309;'; }
+
+        let maskedEmail = item.email ? item.email.split('@')[0] : 'User';
+        html += `
+          <div class="info-row">
+            <span>${rankBadge}${maskedEmail}</span>
+            <span style="${colorStyle}">${formatNumber(Number(item.balance) || 0)}đ</span>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function switchAuthTab(tab) {
+      document.getElementById('authMessage').innerText = '';
+      if (tab === 'login') {
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('signupForm').classList.add('hidden');
+        document.getElementById('tabLoginBtn').classList.add('active');
+        document.getElementById('tabSignupBtn').classList.remove('active');
+      } else {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('signupForm').classList.remove('hidden');
+        document.getElementById('tabSignupBtn').classList.add('active');
+        document.getElementById('tabLoginBtn').classList.remove('active');
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang đăng nhập...';
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else {
+        msg.className = 'auth-message success';
+        msg.innerText = 'Đăng nhập thành công!';
+        setTimeout(() => showMainShop(data.user), 500);
+      }
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault();
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang đăng ký...';
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else {
+        msg.className = 'auth-message success';
+        msg.innerText = 'Đăng ký thành công! Vui lòng đăng nhập.';
+        switchAuthTab('login');
+      }
+    }
+
+    async function handleLogout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      showAuthScreen();
+    }
+
+    function switchNavTab(tabName, btnEl) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      btnEl.classList.add('active');
+
+      if (tabName === 'top') loadTopDonate();
+      if (tabName === 'account') loadAccountOverview();
+    }
+
+    function formatNumber(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function toggleGameList() {
+      const grid = document.getElementById('gameGrid');
+      const chevron = document.getElementById('gameChevron');
+      if (grid.style.display === 'none' || grid.style.display === '') {
+        grid.style.display = 'grid';
+        chevron.className = 'fa-solid fa-chevron-up';
+      } else {
+        grid.style.display = 'none';
+        chevron.className = 'fa-solid fa-chevron-down';
+      }
+    }
+
+    function toggleAppList() {
+      const grid = document.getElementById('appGrid');
+      const chevron = document.getElementById('appChevron');
+      if (grid.style.display === 'none' || grid.style.display === '') {
+        grid.style.display = 'grid';
+        chevron.className = 'fa-solid fa-chevron-up';
+      } else {
+        grid.style.display = 'none';
+        chevron.className = 'fa-solid fa-chevron-down';
+      }
+    }
+
+    function selectGame(gameName, imgSrc, el) {
+      selectedGame = gameName;
+      document.getElementById('selectedGameText').innerText = gameName;
+      document.getElementById('selectedGameImg').src = imgSrc;
+      document.querySelectorAll('#gameGrid .grid-item').forEach(item => item.classList.remove('selected'));
+      el.classList.add('selected');
+      toggleGameList();
+      renderAppGrid();
+    }
+
+    function renderAppGrid() {
+      const appContainer = document.getElementById('appGrid');
+      appContainer.innerHTML = '';
+      const apps = gameAppData[selectedGame] || [];
+
+      if (apps.length > 0) {
+        selectedApp = apps[0];
+        document.getElementById('selectedAppText').innerText = selectedApp.name;
+        document.getElementById('selectedAppImg').src = selectedApp.img;
+        document.getElementById('downloadBtnText').innerText = `TẢI ${selectedApp.name.toUpperCase()}`;
+
+        apps.forEach((app, index) => {
+          const item = document.createElement('div');
+          item.className = `grid-item ${index === 0 ? 'selected' : ''}`;
+          item.onclick = () => selectApp(app, item);
+          item.innerHTML = `<img src="${app.img}" alt="${app.name}"><span>${app.name}</span>`;
+          appContainer.appendChild(item);
+        });
+      } else {
+        selectedApp = null;
+        document.getElementById('selectedAppText').innerText = 'Không có ứng dụng';
+        document.getElementById('downloadBtnText').innerText = 'CHƯA CÓ LINK TẢI';
+      }
+    }
+
+    function selectApp(app, el) {
+      selectedApp = app;
+      document.getElementById('selectedAppText').innerText = app.name;
+      document.getElementById('selectedAppImg').src = app.img;
+      document.getElementById('downloadBtnText').innerText = `TẢI ${app.name.toUpperCase()}`;
+      document.querySelectorAll('#appGrid .grid-item').forEach(item => item.classList.remove('selected'));
+      el.classList.add('selected');
+      toggleAppList();
+    }
+
+    async function triggerDownload() {
+      if (selectedApp && selectedApp.url) {
+        if (currentUser && typeof supabaseClient !== 'undefined') {
+          await supabaseClient.from('downloads_log').insert([{ user_id: currentUser.id, app_name: selectedApp.name }]);
+        }
+        alert(`Bắt đầu tải file: ${selectedApp.name}`);
+        window.open(selectedApp.url, '_blank');
+      } else {
+        alert('Chưa có liên kết tải xuống cho ứng dụng này!');
+      }
+    }
+
+    function selectAmount(amount, btnEl) {
+      selectedDepositAmount = amount;
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+      document.getElementById('customAmountInput').value = '';
+    }
+
+    function onCustomAmountInput(inputEl) {
+      const val = parseInt(inputEl.value);
+      if (val && val >= 10000) {
+        selectedDepositAmount = val;
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      }
+    }
+
+    function generateDepositQR() {
+      if (!currentUser) {
+        alert("Vui lòng đăng nhập trước khi nạp tiền!");
+        return;
+      }
+
+      if (selectedDepositAmount < 10000) {
+        alert("Số tiền nạp tối thiểu là 10.000đ!");
+        return;
+      }
+
+      const userShortId = currentUser.id.substring(0, 6).toUpperCase();
+      const randomHex = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, '0');
+      const memoCode = `NAPD${userShortId}${randomHex}`;
+
+      const qrUrl = `https://img.vietqr.io/image/MB-${BANK_ACCOUNT}-compact2.png?amount=${selectedDepositAmount}&addInfo=${memoCode}&accountName=${encodeURIComponent(BANK_NAME)}`;
+
+      document.getElementById('modalAmountDisplay').innerText = formatNumber(selectedDepositAmount) + 'đ';
+      document.getElementById('modalMemoInput').value = memoCode;
+      document.getElementById('modalQrImage').src = qrUrl;
+      document.getElementById('modalAccountName').innerText = BANK_NAME;
+      document.getElementById('modalAccountNumber').innerText = BANK_ACCOUNT;
+
+      document.getElementById('qrModal').classList.remove('hidden');
+    }
+
+    function copyMemo() {
+      const memoInput = document.getElementById('modalMemoInput');
+      memoInput.select();
+      memoInput.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(memoInput.value);
+      alert(`Đã sao chép nội dung: ${memoInput.value}`);
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    // XỬ LÝ QUAY SỐ & LƯU DB CHỐNG MẤT KHI REFRESH
+    async function spinWheel() {
+      const spinCost = 10000;
+
+      if (currentSpinCount > 0) {
+        const newSpin = Number(currentSpinCount) - 1;
+        const { error } = await supabaseClient.from('profiles').update({ spin_count: newSpin }).eq('id', currentUser.id);
+        
+        if (!error) {
+          currentSpinCount = newSpin;
+          document.getElementById('spinCountText').innerText = currentSpinCount;
+        }
+      } else if (currentBalance >= spinCost) {
+        const newBal = Number(currentBalance) - spinCost;
+        const { error } = await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', currentUser.id);
+        
+        if (!error) {
+          currentBalance = newBal;
+          document.getElementById('userBalance').innerText = formatNumber(currentBalance);
+        }
+      } else {
+        alert('Bạn cần ít nhất 10.000đ hoặc 1 lượt quay khả dụng để tham gia!');
+        return;
+      }
+
+      const wheel = document.getElementById('wheelEl');
+      const randomDeg = Math.floor(Math.random() * 360) + 1440;
+      currentRotation += randomDeg;
+      wheel.style.transform = `rotate(${currentRotation}deg)`;
+      
+      setTimeout(() => alert('🎉 Chúc mừng bạn đã quay trúng phần thưởng!'), 3200);
+    }
+
+    function applyVoucher() {
+      const code = document.getElementById('voucherCodeInput').value.trim();
+      if (!code) return alert('Vui lòng nhập mã voucher!');
+      applyGiftcodeLogic(code);
+    }
+
+    function applyGiftcode() {
+      const code = document.getElementById('giftCodeInput').value.trim();
+      if (!code) return alert('Vui lòng nhập mã giftcode!');
+      applyGiftcodeLogic(code);
+    }
+
+    // XỬ LÝ NHẬN GIFTCODE (SỬA LỖI NỐI CHUỖI & TỰ ĐỘNG LƯU SUPABASE)
+    async function applyGiftcodeLogic(inputCode) {
+      if (!currentUser || typeof supabaseClient === 'undefined') return alert("Vui lòng đăng nhập!");
+
+      const cleanCode = inputCode.trim().toUpperCase();
+      
+      const { data: gc, error } = await supabaseClient
+        .from('giftcodes')
+        .select('*')
+        .eq('code', cleanCode)
+        .single();
+
+      if (error || !gc) return alert("Mã không tồn tại hoặc đã bị xóa!");
+      if (Number(gc.used_count) >= Number(gc.max_uses)) return alert("Mã đã hết số lượt sử dụng!");
+
+      const { data: profile, error: profError } = await supabaseClient
+        .from('profiles')
+        .select('balance, spin_count')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (profError) return alert("Lỗi lấy thông tin tài khoản!");
+
+      // Ép kiểu chuẩn dạng Số (ÉP KIỂU NUMBER BẮT BUỘC CHỐNG LỖI 10000110)
+      const rewardVal = Number(gc.value) || 0;
+
+      if (gc.type === 'spin') {
+        const currentSpins = Number(profile?.spin_count) || 0;
+        const newSpin = currentSpins + rewardVal; // Phép cộng toán học
+
+        const { error: updateErr } = await supabaseClient
+          .from('profiles')
+          .update({ spin_count: newSpin })
+          .eq('id', currentUser.id);
+
+        if (updateErr) return alert("Lỗi cập nhật lượt quay: " + updateErr.message);
+
+        currentSpinCount = newSpin;
+        document.getElementById('spinCountText').innerText = newSpin;
+        alert(`🎉 Áp dụng thành công! Bạn nhận được +${rewardVal} lượt quay.`);
+      } else {
+        const currentBal = Number(profile?.balance) || 0;
+        const newBal = currentBal + rewardVal; // Phép cộng toán học
+
+        const { error: updateErr } = await supabaseClient
+          .from('profiles')
+          .update({ balance: newBal })
+          .eq('id', currentUser.id);
+
+        if (updateErr) return alert("Lỗi cộng tiền: " + updateErr.message);
+
+        currentBalance = newBal;
+        document.getElementById('userBalance').innerText = formatNumber(newBal);
+        alert(`🎉 Áp dụng thành công! Bạn nhận được +${formatNumber(rewardVal)}đ vào tài khoản.`);
+      }
+
+      await supabaseClient
+        .from('giftcodes')
+        .update({ used_count: (Number(gc.used_count) || 0) + 1 })
+        .eq('id', gc.id);
+
+      await fetchUserBalance();
+
+      if (document.getElementById('giftCodeInput')) document.getElementById('giftCodeInput').value = '';
+      if (document.getElementById('voucherCodeInput')) document.getElementById('voucherCodeInput').value = '';
+    }
+  </script>
+</body>
+</html>
