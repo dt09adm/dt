@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>dt09 - Admin Dashboard</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-main: #060814;
+      --card-bg: #111428;
+      --card-border: #1d2242;
+      --accent-purple: #8b5cf6;
+      --accent-orange: #f97316;
+      --text-main: #ffffff;
+      --text-muted: #808aab;
+      --danger-red: #ef4444;
+      --success-green: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+    body { background-color: #020307; color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+
+    .admin-container {
+      width: 100%;
+      max-width: 600px;
+      background: radial-gradient(circle at top, #181538 0%, #060814 80%);
+      padding: 16px;
+      min-height: 100vh;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 16px;
+    }
+
+    .admin-header h2 { font-size: 18px; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-orange);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    th { color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+
+    .badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success-green); }
+    
+    .btn-action {
+      background: var(--accent-purple);
+      border: none;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .input-edit {
+      background: #151833;
+      border: 1px solid #23284c;
+      color: white;
+      padding: 4px 6px;
+      border-radius: 6px;
+      width: 90px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="admin-container">
+    <div class="admin-header">
+      <h2><i class="fa-solid fa-user-shield"></i> dt09 Admin Panel</h2>
+      <button class="btn-action" onclick="loadAllData()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+    </div>
+
+    <!-- KHU VỰC QUẢN LÝ TÀI KHOẢN & SỐ DƯ -->
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-users"></i> Danh Sách Tài Khoản Người Dùng</div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Email / ID</th>
+              <th>Số dư</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody">
+            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Đang tải dữ liệu...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- KHU VỰC BẢNG LỊCH SỬ MUA KEY -->
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-receipt"></i> Lịch Sử Mua Key</div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Người mua</th>
+              <th>Gói Key</th>
+              <th>Giá tiền</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Đang tải lịch sử...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    window.onload = function() {
+      loadAllData();
+    };
+
+    function loadAllData() {
+      loadUsers();
+      loadPurchaseHistory();
+    }
+
+    function formatNumber(num) {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    // 1. TẢI DANH SÁCH TÀI KHOẢN NGƯỜI DÙNG
+    async function loadUsers() {
+      const tbody = document.getElementById('userTableBody');
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Chưa có người dùng nào.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      data.forEach(user => {
+        const email = user.email || 'N/A';
+        const shortId = user.id ? user.id.substring(0, 6) : '---';
+        const balance = user.balance || 0;
+
+        html += `
+          <tr>
+            <td>
+              <div style="font-weight: bold;">${email}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">ID: ${shortId}</div>
+            </td>
+            <td>
+              <input type="number" class="input-edit" id="bal-${user.id}" value="${balance}">
+            </td>
+            <td>
+              <button class="btn-action" onclick="updateUserBalance('${user.id}')">Lưu</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // CẬP NHẬT SỐ DƯ TÀI KHOẢN
+    async function updateUserBalance(userId) {
+      const newBalInput = document.getElementById(`bal-${userId}`);
+      const newBalance = Number(newBalInput.value);
+
+      if (isNaN(newBalance)) {
+        alert('Số dư không hợp lệ!');
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('id', userId);
+
+      if (error) {
+        alert('Lỗi cập nhật: ' + error.message);
+      } else {
+        alert('✅ Đã cập nhật số dư thành công!');
+        loadUsers();
+      }
+    }
+
+    // 2. TẢI LỊCH SỬ MUA KEY
+    async function loadPurchaseHistory() {
+      const tbody = document.getElementById('historyTableBody');
+      const { data, error } = await supabaseClient
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Chưa có lịch sử giao dịch.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      data.forEach(order => {
+        const time = new Date(order.created_at).toLocaleString('vi-VN');
+        const userEmail = order.user_email || 'User';
+        const pkgName = order.package_name || 'Key Game';
+        const amount = order.amount || 0;
+
+        html += `
+          <tr>
+            <td style="font-size: 10px; color: var(--text-muted);">${time}</td>
+            <td>${userEmail}</td>
+            <td><span class="badge badge-success">${pkgName}</span></td>
+            <td style="color: var(--accent-orange); font-weight: bold;">${formatNumber(amount)}đ</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
