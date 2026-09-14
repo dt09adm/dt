@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>dt09 - Tải Game & Tool Auto</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-main: #060814;
+      --card-bg: #111428;
+      --card-border: #1d2242;
+      --accent-purple: #8b5cf6;
+      --accent-orange: #f97316;
+      --text-main: #ffffff;
+      --text-muted: #808aab;
+      --danger-red: #ef4444;
+      --success-green: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+    body { background-color: #020307; color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: radial-gradient(circle at top, #181538 0%, #060814 80%);
+      position: relative;
+      padding-bottom: 80px;
+      min-height: 100vh;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+
+    .hidden { display: none !important; }
+
+    /* AUTH SCREEN */
+    .auth-overlay { padding: 30px 20px; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; }
+    .auth-header { text-align: center; margin-bottom: 24px; }
+    .auth-header h2 { font-size: 24px; color: var(--accent-purple); margin-bottom: 6px; }
+    .auth-header p { font-size: 13px; color: var(--text-muted); }
+    .auth-tabs { display: flex; background: #111428; border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 20px; padding: 4px; }
+    .auth-tab { flex: 1; padding: 10px; border: none; background: none; color: var(--text-muted); font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 8px; }
+    .auth-tab.active { background: var(--accent-purple); color: white; }
+    .auth-form { display: flex; flex-direction: column; gap: 14px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 12px; color: var(--text-muted); }
+    .input-group input { background: #151833; border: 1px solid #23284c; border-radius: 10px; padding: 12px; color: white; font-size: 14px; outline: none; }
+    .btn-auth { background: linear-gradient(135deg, var(--accent-purple), #6d28d9); border: none; color: white; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 14px; cursor: pointer; margin-top: 10px; }
+    .auth-message { font-size: 12px; text-align: center; margin-top: 10px; min-height: 18px; }
+    .auth-message.error { color: var(--danger-red); }
+    .auth-message.success { color: var(--success-green); }
+
+    /* HEADER & AVATAR */
+    .profile-header { position: sticky; top: 0; z-index: 99; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(18, 17, 39, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 14px; }
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { position: relative; width: 44px; height: 44px; border-radius: 50%; background: #3b82f6; border: 2px solid rgba(255, 255, 255, 0.15); overflow: hidden; }
+    .user-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+    .user-details .name { font-size: 13px; font-weight: 700; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-details .id { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .balance-pill { background: #141622; border: 1px solid #3d3113; color: #eab308; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 13px; }
+    .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 10px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+
+    .banner-card { background: linear-gradient(135deg, #1d1b3c 0%, #12152e 100%); border: 1px solid var(--card-border); border-radius: 18px; margin: 0 14px 14px 14px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+    .banner-icon { width: 46px; height: 46px; background: #a855f7; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+    .banner-text h3 { font-size: 17px; font-weight: 800; }
+    .banner-text p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* CARDS & GRIDS */
+    .form-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 14px; margin: 0 14px 12px 14px; }
+    .form-header { display: flex; justify-content: space-between; align-items: center; }
+    .form-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-title i { color: var(--accent-purple); background: rgba(139, 92, 246, 0.15); padding: 6px; border-radius: 8px; }
+    
+    .select-btn { background: #191d38; border: 1px solid #2d345e; color: white; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .select-btn img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; }
+
+    .selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .grid-item { background: #151833; border: 1px solid #23284c; border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; font-weight: 700; }
+    .grid-item.selected { border-color: var(--accent-purple); background: rgba(139, 92, 246, 0.15); }
+    .grid-item img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
+
+    .alert-card { background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 14px; padding: 12px 14px; margin: 0 14px 14px 14px; }
+    .alert-title { color: #f59e0b; font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .alert-desc { font-size: 11px; color: #d1d5db; line-height: 1.4; }
+
+    .btn-download { width: calc(100% - 28px); margin: 0 14px 14px 14px; height: 50px; border-radius: 14px; border: none; background: linear-gradient(135deg, #a855f7, #6d28d9); color: white; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3); }
+
+    .amount-btn { background: #151833; border: 1px solid #23284c; color: white; padding: 10px 4px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; }
+    .amount-btn.active { background: rgba(249, 115, 22, 0.15); border-color: #f97316; color: #f97316; }
+
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+    .info-row span:first-child { color: var(--text-muted); }
+    .info-row span:last-child { font-weight: bold; }
+
+    .wheel-container { position: relative; width: 220px; height: 220px; margin: 20px auto; border-radius: 50%; border: 4px solid var(--accent-purple); background: conic-gradient(#8b5cf6 0 90deg, #111428 90deg 180deg, #f97316 180deg 270deg, #151833 270deg 360deg); transition: transform 3s cubic-bezier(0.1, 2.7, 0.58, 1); }
+    .wheel-pointer { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-top: 18px solid #ef4444; z-index: 10; }
+
+    .code-input-box { width: 100%; background: #0c0e1e; border: 1px solid #1e2448; border-radius: 12px; padding: 14px; color: white; font-size: 13px; outline: none; margin-top: 10px; margin-bottom: 10px; }
+    .code-input-box::placeholder { color: #515b7d; }
+    .btn-apply-code { width: 100%; background: linear-gradient(135deg, #312e81, #581c87); border: 1px solid #6366f1; color: white; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 12px rgba(99, 102, 241, 0.2); }
+    
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .stat-card { background: rgba(21, 24, 51, 0.6); border: 1px solid #23284c; border-radius: 14px; padding: 14px 6px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .stat-icon { font-size: 18px; margin-bottom: 8px; }
+    .stat-icon.cyan { color: #06b6d4; }
+    .stat-icon.yellow { color: #eab308; }
+    .stat-icon.green { color: #10b981; }
+    .stat-val { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+    .stat-lbl { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 480px; height: 60px; background: #060814; border-top: 1px solid #16182e; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+    .nav-btn { background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; cursor: pointer; width: 20%; }
+    .nav-btn.active { color: var(--accent-purple); font-weight: bold; }
+    .nav-btn i { font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- AUTH SCREEN -->
+    <div id="authScreen" class="auth-overlay">
+      <div class="auth-header">
+        <h2>dt09</h2>
+        <p>Hệ thống Tải Hack Game Auto 24/7</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">Đăng nhập</button>
+        <button class="auth-tab" id="tabSignupBtn" onclick="switchAuthTab('signup')">Đăng ký</button>
+      </div>
+
+      <!-- FORM ĐĂNG NHẬP -->
+      <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+        <div class="input-group">
+          <label>Tên đăng nhập hoặc Email</label>
+          <input type="text" id="loginIdentifier" placeholder="Tên đăng nhập hoặc email..." required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-auth">ĐĂNG NHẬP</button>
+      </form>
+
+      <!-- FORM ĐĂNG KÝ -->
+      <form id="signupForm" class="auth-form hidden" onsubmit="handleSignup(event)">
+        <div class="input-group">
+          <label>Tên đăng nhập (Hiển thị Top Donate)</label>
+          <input type="text" id="signupUsername" placeholder="Ví dụ: ProPlayer09..." required>
+        </div>
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="nhap@email.com" required>
+        </div>
+        <div class="input-group">
+          <label>Mật khẩu</label>
+          <input type="password" id="signupPassword" placeholder="Tối thiểu 6 ký tự" required>
+        </div>
+        <button type="submit" class="btn-auth">TẠO TÀI KHOẢN</button>
+      </form>
+
+      <div id="authMessage" class="auth-message"></div>
+    </div>
+
+    <!-- MAIN SCREEN -->
+    <div id="mainShopScreen" class="hidden">
+      <!-- Header -->
+      <div class="profile-header">
+        <div class="user-info">
+          <div class="user-avatar">
+            <img id="userAvatarImg" src="" alt="avatar">
+          </div>
+          
+          <div class="user-details">
+            <div class="name" id="userDisplayName">User</div>
+            <div class="id" id="userIdDisplay">ID: ------</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="balance-pill"><span id="userBalance">0đ</span></div>
+          <button class="btn-logout" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+
+      <!-- TAB 1: TẢI GAME -->
+      <div id="tab-download" class="tab-content">
+        <div class="banner-card">
+          <div class="banner-icon"><i class="fa-solid fa-download"></i></div>
+          <div class="banner-text">
+            <h3>dt09 Download Center</h3>
+            <p>Tải xuống bản hack & mod mới nhất</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-title"><i class="fa-solid fa-gamepad"></i><span>Chọn mục game</span></div>
+            <button class="select-btn" onclick="toggleGameList()">
+              <img id="selectedGameImg" src="" alt="game">
+              <span id="selectedGameText">Chọn game</span>
+              <i class="fa-solid fa-chevron-down" id="gameChevron" style="font-size: 10px;"></i>
+            </button>
+          </div>
+          <div class="selection-grid" id="gameGrid"></div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-title"><i class="fa-solid fa-cube"></i><span>Chọn ứng dụng</span></div>
+            <button class="select-btn" onclick="toggleAppList()">
+              <img id="selectedAppImg" src="" alt="app">
+              <span id="selectedAppText">Chọn ứng dụng</span>
+              <i class="fa-solid fa-chevron-down" id="appChevron" style="font-size: 10px;"></i>
+            </button>
+          </div>
+          <div class="selection-grid" id="appGrid"></div>
+        </div>
+
+        <div class="alert-card">
+          <div class="alert-title"><i class="fa-solid fa-triangle-exclamation"></i><span>LƯU Ý KHI TẢI VỀ</span></div>
+          <div class="alert-desc">Sản phẩm hoạt động tốt trên Android thấp và trung bình. Hãy gỡ cài đặt bản game gốc trước khi cài bản Mod.</div>
+        </div>
+
+        <button class="btn-download" onclick="triggerDownload()">
+          <i class="fa-solid fa-circle-down" style="font-size: 18px;"></i>
+          <span id="downloadBtnText">TẢI NGAY</span>
+        </button>
+      </div>
+
+      <!-- TAB 2: DONATE / NẠP TIỀN -->
+      <div id="tab-donate" class="tab-content hidden">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 14px 12px 14px;">
+          <div style="background: rgba(139, 92, 246, 0.2); border: 1px solid var(--accent-purple); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <i class="fa-solid fa-qrcode" style="font-size: 20px; color: var(--accent-purple);"></i>
+            <div>
+              <div style="font-size: 12px; font-weight: 800; color: white;">Chuyển khoản QR</div>
+              <div style="font-size: 10px; color: var(--text-muted);">VietQR Tự động 24/7</div>
+            </div>
+          </div>
+          <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; opacity: 0.6;">
+            <i class="fa-solid fa-mobile-screen-button" style="font-size: 20px; color: var(--text-muted);"></i>
+            <div>
+              <div style="font-size: 12px; font-weight: 800; color: white;">Thẻ cào</div>
+              <div style="font-size: 10px; color: var(--text-muted);">Viettel, Mobi, Vina</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title" style="margin-bottom: 12px;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>CHỌN HOẶC NHẬP SỐ TIỀN</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+            <button class="amount-btn active" onclick="selectAmount(10000, this)">10.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(20000, this)">20.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(50000, this)">50.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(100000, this)">100.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(200000, this)">200.000đ</button>
+            <button class="amount-btn" onclick="selectAmount(500000, this)">500.000đ</button>
+          </div>
+
+          <div style="position: relative; margin-bottom: 14px;">
+            <input type="number" id="customAmountInput" class="code-input-box" style="margin:0; padding-right: 50px;" placeholder="Số tiền khác (tối thiểu 10.000đ)" oninput="onCustomAmountInput(this)">
+            <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; font-size: 12px; color: #eab308;">VNĐ</span>
+          </div>
+
+          <button class="btn-download" style="width: 100%; margin: 0; background: linear-gradient(135deg, #f97316, #ea580c);" onclick="generateDepositQR()">
+            <i class="fa-solid fa-qrcode"></i>
+            <span>TẠO MÃ QR NẠP TIỀN</span>
+          </button>
+        </div>
+
+        <!-- POPUP MÃ QR -->
+        <div id="qrModal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px;">
+          <div style="background: #111428; border: 1px solid var(--card-border); border-radius: 20px; width: 100%; max-width: 400px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;">
+            <div style="font-size: 15px; font-weight: 800; margin-bottom: 14px; text-transform: uppercase;">
+              <i class="fa-solid fa-wallet" style="color: var(--accent-purple);"></i> Thông tin nạp tiền
+            </div>
+            <div style="background: #0b0d1b; border: 1px solid #1e2448; border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">SỐ TIỀN THANH TOÁN</div>
+              <div id="modalAmountDisplay" style="font-size: 22px; font-weight: 900; color: #f97316; margin: 4px 0 12px 0;">10.000đ</div>
+
+              <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 10px; color: #ef4444; font-weight: 800;">🔑 NỘI DUNG CHUYỂN KHOẢN</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <input type="text" id="modalMemoInput" readonly style="width: 100%; background: #151833; border: 1px solid #23284c; color: #38bdf8; font-weight: 800; padding: 8px; border-radius: 8px; font-size: 13px; text-align: center;">
+                  <button onclick="copyMemo()" style="background: var(--accent-purple); border: none; color: white; padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer;">Sao chép</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="background: #ffffff; padding: 12px; border-radius: 14px; display: inline-block; margin-bottom: 12px;">
+              <img id="modalQrImage" src="" alt="QR Code" style="width: 200px; height: 200px; display: block;">
+            </div>
+
+            <button onclick="closeQrModal()" style="width: 100%; background: #23284c; border: none; color: white; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer;">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: TOP DONATE -->
+      <div id="tab-top" class="tab-content hidden">
+        <div class="form-card">
+          <div class="form-title" style="margin-bottom: 12px;"><i class="fa-solid fa-trophy"></i><span>BẢNG XẾP HẠNG TOP DONATE</span></div>
+          <div id="topRankContainer">
+            <div style="text-align: center; color: var(--text-muted); padding: 10px;">Đang tải danh sách...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: VÒNG QUAY MAY MẮN -->
+      <div id="tab-wheel" class="tab-content hidden">
+        <div class="form-card" style="text-align: center;">
+          <div class="form-title" style="justify-content: center;"><i class="fa-solid fa-wand-magic-sparkles"></i><span>VÒNG QUAY MAY MẮN</span></div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Chi phí: 10.000đ / lượt quay (Lượt khả dụng: <span id="spinCountText" style="color:#eab308; font-weight:bold;">0</span>)</p>
+          
+          <div style="position: relative; display: inline-block;">
+            <div class="wheel-pointer"></div>
+            <div class="wheel-container" id="wheelEl"></div>
+          </div>
+
+          <button class="btn-download" style="margin: 10px auto 0 auto; width: 80%;" onclick="spinWheel()">QUAY NGAY</button>
+        </div>
+      </div>
+
+      <!-- TAB 5: CÁ NHÂN -->
+      <div id="tab-account" class="tab-content hidden">
+        <div class="form-card">
+          <div class="form-title"><i class="fa-solid fa-ticket"></i><span>Mã Voucher</span></div>
+          <input type="text" class="code-input-box" id="voucherCodeInput" placeholder="Nhập mã voucher">
+          <button class="btn-apply-code" onclick="applyVoucher()">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Áp Dụng Voucher</span>
+          </button>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title"><i class="fa-solid fa-gift"></i><span>Mã Giftcode</span></div>
+          <input type="text" class="code-input-box" id="giftCodeInput" placeholder="Nhập mã giftcode">
+          <button class="btn-apply-code" onclick="applyGiftcode()">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Áp Dụng Giftcode</span>
+          </button>
+        </div>
+
+        <div class="form-card">
+          <div class="form-title"><i class="fa-solid fa-pie-chart"></i><span>Tổng Quan Tài Khoản</span></div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon cyan"><i class="fa-solid fa-key"></i></div>
+              <div class="stat-val" id="statBoughtCount">0</div>
+              <div class="stat-lbl">SP ĐÃ MUA</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon yellow"><i class="fa-solid fa-cart-shopping"></i></div>
+              <div class="stat-val" id="statTotalSpent">0đ</div>
+              <div class="stat-lbl">TỔNG CHI</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green"><i class="fa-solid fa-wallet"></i></div>
+              <div class="stat-val" id="statTotalDeposited">0đ</div>
+              <div class="stat-lbl">TỔNG NẠP</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 0 14px 14px 14px;">
+          <button class="btn-auth" style="background: #ef4444;" onclick="handleLogout()">ĐĂNG XUẤT TÀI KHOẢN</button>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <div class="bottom-nav">
+        <button class="nav-btn active" onclick="switchNavTab('download', this)"><i class="fa-solid fa-download"></i><span>Tải Game</span></button>
+        <button class="nav-btn" onclick="switchNavTab('donate', this)"><i class="fa-solid fa-heart"></i><span>Donate</span></button>
+        <button class="nav-btn" onclick="switchNavTab('top', this)"><i class="fa-solid fa-trophy"></i><span>Top Donate</span></button>
+        <button class="nav-btn" onclick="switchNavTab('wheel', this)"><i class="fa-solid fa-wand-magic-sparkles"></i><span>VQMM</span></button>
+        <button class="nav-btn" onclick="switchNavTab('account', this)"><i class="fa-solid fa-user"></i><span>Cá Nhân</span></button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    function generateFallbackAvatar(text, bgColor = '8b5cf6') {
+      const char = (text || 'G').charAt(0).toUpperCase();
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+        <rect width="100%" height="100%" fill="#${bgColor}"/>
+        <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-size="50" font-weight="bold" font-family="sans-serif">${char}</text>
+      </svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    let selectedGame = null;
+    let selectedApp = null;
+    let currentUser = null;
+    let currentUserProfile = null;
+    let currentBalance = 0;
+    let currentSpinCount = 0;
+    let currentRotation = 0;
+    let selectedDepositAmount = 10000;
+    const BANK_ACCOUNT = "0355095429";
+    const BANK_NAME = "NGO DUY TOAN";
+
+    function toPureNumber(val) {
+      if (val === null || val === undefined) return 0;
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
+      const str = val.toString().replace(/[^0-9]/g, '');
+      return parseInt(str, 10) || 0;
+    }
+
+    function formatCurrency(val) {
+      return toPureNumber(val).toLocaleString('vi-VN') + 'đ';
+    }
+
+    window.onload = async function() {
+      document.getElementById('selectedAppImg').src = generateFallbackAvatar('App', '3b82f6');
+      document.getElementById('userAvatarImg').src = generateFallbackAvatar('U', '8b5cf6');
+
+      if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          await showMainShop(session.user);
+        } else {
+          showAuthScreen();
+        }
+      } else {
+        showAuthScreen();
+      }
+    };
+
+    function showAuthScreen() {
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('mainShopScreen').classList.add('hidden');
+    }
+
+    async function showMainShop(user) {
+      currentUser = user;
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainShopScreen').classList.remove('hidden');
+
+      await fetchUserBalance();
+
+      // Tự động gán username từ phần đầu email nếu tài khoản cũ chưa có username
+      const fallbackName = user.email ? user.email.split('@')[0] : 'User';
+      const displayName = (currentUserProfile && currentUserProfile.username) ? currentUserProfile.username : fallbackName;
+      const shortId = user.id ? user.id.substring(0, 8) : '------';
+
+      document.getElementById('userDisplayName').innerText = displayName;
+      document.getElementById('userIdDisplay').innerText = `ID: ${shortId}`;
+      document.getElementById('userAvatarImg').src = generateFallbackAvatar(displayName, '8b5cf6');
+
+      await loadGamesFromSupabase();
+      loadTopDonate();
+      loadAccountOverview();
+    }
+
+    async function fetchUserBalance() {
+      if (!currentUser || typeof supabaseClient === 'undefined') return;
+      
+      let { data, error } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+      const defaultUsername = currentUser.email ? currentUser.email.split('@')[0] : 'User';
+
+      // Nếu tài khoản cũ chưa được lưu vào bảng profiles hoặc thiếu username
+      if (!data) {
+        const { data: newProfile } = await supabaseClient
+          .from('profiles')
+          .insert([
+            { id: currentUser.id, email: currentUser.email, username: defaultUsername, balance: 0, spin_count: 0, total_deposited: 0 }
+          ])
+          .select()
+          .maybeSingle();
+        data = newProfile;
+      } else if (!data.username || data.username.trim() === '') {
+        // Tự động bổ sung username cho tài khoản cũ bị thiếu field username
+        await supabaseClient
+          .from('profiles')
+          .update({ username: defaultUsername })
+          .eq('id', currentUser.id);
+        data.username = defaultUsername;
+      }
+
+      if (data) {
+        currentUserProfile = data;
+        currentBalance = toPureNumber(data.balance);
+        currentSpinCount = toPureNumber(data.spin_count);
+
+        document.getElementById('userBalance').innerText = formatCurrency(currentBalance);
+        if (document.getElementById('spinCountText')) document.getElementById('spinCountText').innerText = currentSpinCount;
+        if (document.getElementById('statTotalDeposited')) document.getElementById('statTotalDeposited').innerText = formatCurrency(toPureNumber(data.total_deposited));
+      }
+    }
+
+    async function loadGamesFromSupabase() {
+      const grid = document.getElementById('gameGrid');
+      grid.innerHTML = '';
+
+      if (typeof supabaseClient === 'undefined') return;
+
+      const { data: games, error } = await supabaseClient
+        .from('games')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error || !games || games.length === 0) {
+        grid.innerHTML = '<div style="grid-column:span 2; text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">Chưa có game nào</div>';
+        document.getElementById('selectedGameText').innerText = 'Chưa có game';
+        document.getElementById('selectedGameImg').src = generateFallbackAvatar('Game', '1d2242');
+        return;
+      }
+
+      const firstGame = games[0];
+      const firstIconSrc = (firstGame.icon_url && firstGame.icon_url.trim() !== '') ? firstGame.icon_url : generateFallbackAvatar(firstGame.game_name, '1d2242');
+      selectedGame = firstGame.game_name;
+      document.getElementById('selectedGameText').innerText = firstGame.game_name;
+      document.getElementById('selectedGameImg').src = firstIconSrc;
+
+      games.forEach((g, idx) => {
+        const item = document.createElement('div');
+        item.className = `grid-item ${idx === 0 ? 'selected' : ''}`;
+        const iconSrc = (g.icon_url && g.icon_url.trim() !== '') ? g.icon_url : generateFallbackAvatar(g.game_name, '1d2242');
+        
+        item.onclick = () => selectGame(g.game_name, g.game_name, iconSrc, item);
+        item.innerHTML = `
+          <img src="${iconSrc}" alt="${g.game_name}" onerror="this.src='${generateFallbackAvatar(g.game_name, '1d2242')}'">
+          <span>${g.game_name}</span>
+        `;
+        grid.appendChild(item);
+      });
+
+      loadAppsFromSupabase(firstGame.game_name);
+    }
+
+    async function loadAppsFromSupabase(gameFilter) {
+      const grid = document.getElementById('appGrid');
+      grid.innerHTML = '';
+
+      if (typeof supabaseClient === 'undefined') return;
+
+      let query = supabaseClient.from('app_links').select('*');
+      if (gameFilter) query = query.eq('game_name', gameFilter);
+      
+      const { data: apps, error } = await query;
+
+      if (error || !apps || apps.length === 0) {
+        grid.innerHTML = '<div style="grid-column:span 2; text-align:center; font-size:11px; color:var(--text-muted); padding:10px;">Không có ứng dụng nào</div>';
+        selectedApp = null;
+        document.getElementById('selectedAppText').innerText = 'Chưa có app';
+        document.getElementById('selectedAppImg').src = generateFallbackAvatar('App', '3b82f6');
+        document.getElementById('downloadBtnText').innerText = 'KHÔNG CÓ FILE TẢI';
+        return;
+      }
+
+      selectedApp = apps[0];
+      const firstIcon = (selectedApp.icon_url && selectedApp.icon_url.trim() !== '') ? selectedApp.icon_url : generateFallbackAvatar(selectedApp.app_name, 'a855f7');
+      document.getElementById('selectedAppText').innerText = selectedApp.app_name;
+      document.getElementById('selectedAppImg').src = firstIcon;
+      document.getElementById('downloadBtnText').innerText = `TẢI ${selectedApp.app_name.toUpperCase()}`;
+
+      apps.forEach((app, idx) => {
+        const item = document.createElement('div');
+        item.className = `grid-item ${idx === 0 ? 'selected' : ''}`;
+        const iconSrc = (app.icon_url && app.icon_url.trim() !== '') ? app.icon_url : generateFallbackAvatar(app.app_name, 'a855f7');
+        
+        item.onclick = () => selectApp(app, iconSrc, item);
+        item.innerHTML = `
+          <img src="${iconSrc}" alt="${app.app_name}" onerror="this.src='${generateFallbackAvatar(app.app_name, 'a855f7')}'">
+          <span>${app.app_name}</span>
+        `;
+        grid.appendChild(item);
+      });
+    }
+
+    function selectGame(gameName, displayName, imgSrc, el) {
+      selectedGame = gameName;
+      document.getElementById('selectedGameText').innerText = displayName;
+      document.getElementById('selectedGameImg').src = imgSrc;
+      document.querySelectorAll('#gameGrid .grid-item').forEach(item => item.classList.remove('selected'));
+      el.classList.add('selected');
+      toggleGameList();
+      loadAppsFromSupabase(gameName);
+    }
+
+    function selectApp(app, imgSrc, el) {
+      selectedApp = app;
+      document.getElementById('selectedAppText').innerText = app.app_name;
+      document.getElementById('selectedAppImg').src = imgSrc;
+      document.getElementById('downloadBtnText').innerText = `TẢI ${app.app_name.toUpperCase()}`;
+      document.querySelectorAll('#appGrid .grid-item').forEach(item => item.classList.remove('selected'));
+      el.classList.add('selected');
+      toggleAppList();
+    }
+
+    function triggerDownload() {
+      if (selectedApp && selectedApp.download_url && selectedApp.download_url !== '#') {
+        alert(`Bắt đầu chuyển đến trang tải: ${selectedApp.app_name}`);
+        window.open(selectedApp.download_url, '_blank');
+      } else {
+        alert('Ứng dụng này chưa cập nhật link tải!');
+      }
+    }
+
+    async function applyGiftcodeLogic(inputCode) {
+      if (!currentUser || typeof supabaseClient === 'undefined') return alert("Vui lòng đăng nhập!");
+
+      const cleanCode = inputCode.trim().toUpperCase();
+      const { data: gc } = await supabaseClient.from('giftcodes').select('*').eq('code', cleanCode).maybeSingle();
+
+      if (!gc) return alert("Mã không tồn tại hoặc đã bị sử dụng!");
+
+      const rewardVal = toPureNumber(gc.value);
+
+      if (gc.type === 'spin') {
+        const newSpin = currentSpinCount + rewardVal;
+        await supabaseClient.from('profiles').update({ spin_count: newSpin }).eq('id', currentUser.id);
+        currentSpinCount = newSpin;
+        if (document.getElementById('spinCountText')) document.getElementById('spinCountText').innerText = newSpin;
+        alert(`🎉 Bạn đã nhận +${rewardVal} lượt quay!`);
+      } else {
+        const newBal = currentBalance + rewardVal;
+        await supabaseClient.from('profiles').update({ balance: newBal }).eq('id', currentUser.id);
+        currentBalance = newBal;
+        document.getElementById('userBalance').innerText = formatCurrency(newBal);
+        alert(`🎉 Bạn đã nhận +${formatCurrency(rewardVal)} vào tài khoản!`);
+      }
+    }
+
+    async function spinWheel() {
+      const spinCost = 10000;
+      if (currentSpinCount > 0) {
+        currentSpinCount--;
+        if (document.getElementById('spinCountText')) document.getElementById('spinCountText').innerText = currentSpinCount;
+      } else if (currentBalance >= spinCost) {
+        currentBalance -= spinCost;
+        document.getElementById('userBalance').innerText = formatCurrency(currentBalance);
+      } else {
+        alert('Bạn cần ít nhất 10.000đ hoặc 1 lượt quay khả dụng!');
+        return;
+      }
+
+      const wheel = document.getElementById('wheelEl');
+      const randomDeg = Math.floor(Math.random() * 360) + 1440;
+      currentRotation += randomDeg;
+      wheel.style.transform = `rotate(${currentRotation}deg)`;
+      setTimeout(() => alert('🎉 Chúc mừng bạn đã quay trúng phần thưởng!'), 3200);
+    }
+
+    function applyVoucher() {
+      const code = document.getElementById('voucherCodeInput').value.trim();
+      if (!code) return alert('Vui lòng nhập mã voucher!');
+      applyGiftcodeLogic(code);
+    }
+
+    function applyGiftcode() {
+      const code = document.getElementById('giftCodeInput').value.trim();
+      if (!code) return alert('Vui lòng nhập mã giftcode!');
+      applyGiftcodeLogic(code);
+    }
+
+    async function loadAccountOverview() {
+      if (!currentUser || typeof supabaseClient === 'undefined') return;
+      const { data: orders } = await supabaseClient.from('orders').select('*').eq('user_id', currentUser.id);
+      let boughtCount = orders ? orders.length : 0;
+      let totalSpent = 0;
+      if (orders) orders.forEach(item => totalSpent += toPureNumber(item.amount));
+      document.getElementById('statBoughtCount').innerText = boughtCount;
+      document.getElementById('statTotalSpent').innerText = formatCurrency(totalSpent);
+    }
+
+    async function loadTopDonate() {
+      const container = document.getElementById('topRankContainer');
+      if (typeof supabaseClient === 'undefined') return;
+
+      const { data } = await supabaseClient
+        .from('profiles')
+        .select('username, email, balance')
+        .order('balance', { ascending: false })
+        .limit(5);
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 10px;">Chưa có dữ liệu xếp hạng</div>';
+        return;
+      }
+
+      let html = '';
+      data.forEach((item, index) => {
+        let rankBadge = `${index + 1}. `;
+        let colorStyle = '';
+        if (index === 0) { rankBadge = '🥇 Top 1: '; colorStyle = 'color: #eab308;'; }
+        else if (index === 1) { rankBadge = '🥈 Top 2: '; colorStyle = 'color: #94a3b8;'; }
+        else if (index === 2) { rankBadge = '🥉 Top 3: '; colorStyle = 'color: #b45309;'; }
+
+        let displayName = item.username ? item.username : (item.email ? item.email.split('@')[0] : 'User');
+        html += `
+          <div class="info-row">
+            <span>${rankBadge}${displayName}</span>
+            <span style="${colorStyle}">${formatCurrency(item.balance)}</span>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function switchAuthTab(tab) {
+      document.getElementById('authMessage').innerText = '';
+      if (tab === 'login') {
+        document.getElementById('loginForm').classList.remove('hidden');
+        document.getElementById('signupForm').classList.add('hidden');
+        document.getElementById('tabLoginBtn').classList.add('active');
+        document.getElementById('tabSignupBtn').classList.remove('active');
+      } else {
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('signupForm').classList.remove('hidden');
+        document.getElementById('tabSignupBtn').classList.add('active');
+        document.getElementById('tabLoginBtn').classList.remove('active');
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const identifier = document.getElementById('loginIdentifier').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang đăng nhập...';
+
+      let targetEmail = identifier;
+
+      if (!identifier.includes('@')) {
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('email')
+          .eq('username', identifier)
+          .maybeSingle();
+
+        if (profile && profile.email) {
+          targetEmail = profile.email;
+        } else {
+          msg.className = 'auth-message error';
+          msg.innerText = 'Tên đăng nhập không tồn tại!';
+          return;
+        }
+      }
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email: targetEmail, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else {
+        msg.className = 'auth-message success';
+        msg.innerText = 'Đăng nhập thành công!';
+        setTimeout(() => showMainShop(data.user), 500);
+      }
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault();
+      const username = document.getElementById('signupUsername').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const msg = document.getElementById('authMessage');
+
+      if (!username) {
+        msg.className = 'auth-message error';
+        msg.innerText = 'Vui lòng nhập Tên đăng nhập!';
+        return;
+      }
+
+      msg.className = 'auth-message';
+      msg.innerText = 'Đang kiểm tra thông tin...';
+
+      const { data: existingUser } = await supabaseClient
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (existingUser) {
+        msg.className = 'auth-message error';
+        msg.innerText = 'Tên đăng nhập đã được sử dụng!';
+        return;
+      }
+
+      msg.innerText = 'Đang tạo tài khoản...';
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        msg.className = 'auth-message error';
+        msg.innerText = error.message;
+      } else if (data.user) {
+        await supabaseClient.from('profiles').insert([
+          { id: data.user.id, email: email, username: username, balance: 0, spin_count: 0, total_deposited: 0 }
+        ]);
+
+        msg.className = 'auth-message success';
+        
+        // Nếu đã tắt Confirm Email trên Dashboard, có thể đăng nhập ngay
+        if (data.session) {
+          msg.innerText = 'Đăng ký thành công!';
+          setTimeout(() => showMainShop(data.user), 500);
+        } else {
+          msg.innerText = 'Đăng ký thành công! Bạn có thể đăng nhập ngay.';
+          switchAuthTab('login');
+        }
+      }
+    }
+
+    async function handleLogout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      showAuthScreen();
+    }
+
+    function switchNavTab(tabName, btnEl) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      btnEl.classList.add('active');
+
+      if (tabName === 'top') loadTopDonate();
+      if (tabName === 'account') loadAccountOverview();
+    }
+
+    function toggleGameList() {
+      const grid = document.getElementById('gameGrid');
+      const chevron = document.getElementById('gameChevron');
+      grid.style.display = (grid.style.display === 'none' || grid.style.display === '') ? 'grid' : 'none';
+      chevron.className = grid.style.display === 'grid' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+    }
+
+    function toggleAppList() {
+      const grid = document.getElementById('appGrid');
+      const chevron = document.getElementById('appChevron');
+      grid.style.display = (grid.style.display === 'none' || grid.style.display === '') ? 'grid' : 'none';
+      chevron.className = grid.style.display === 'grid' ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+    }
+
+    function selectAmount(amount, btnEl) {
+      selectedDepositAmount = amount;
+      document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+      document.getElementById('customAmountInput').value = '';
+    }
+
+    function onCustomAmountInput(inputEl) {
+      const val = parseInt(inputEl.value, 10);
+      if (val && val >= 10000) {
+        selectedDepositAmount = val;
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('active'));
+      }
+    }
+
+    function generateDepositQR() {
+      if (!currentUser) return alert("Vui lòng đăng nhập trước khi nạp tiền!");
+      if (selectedDepositAmount < 10000) return alert("Số tiền nạp tối thiểu là 10.000đ!");
+
+      const userShortId = currentUser.id.substring(0, 6).toUpperCase();
+      const randomHex = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, '0');
+      const memoCode = `NAPD${userShortId}${randomHex}`;
+
+      const qrUrl = `https://img.vietqr.io/image/MB-${BANK_ACCOUNT}-compact2.png?amount=${selectedDepositAmount}&addInfo=${memoCode}&accountName=${encodeURIComponent(BANK_NAME)}`;
+
+      document.getElementById('modalAmountDisplay').innerText = formatCurrency(selectedDepositAmount);
+      document.getElementById('modalMemoInput').value = memoCode;
+      document.getElementById('modalQrImage').src = qrUrl;
+      document.getElementById('qrModal').classList.remove('hidden');
+    }
+
+    function copyMemo() {
+      const memoInput = document.getElementById('modalMemoInput');
+      memoInput.select();
+      navigator.clipboard.writeText(memoInput.value);
+      alert(`Đã sao chép: ${memoInput.value}`);
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
